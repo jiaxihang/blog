@@ -1,0 +1,1572 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JIA | 数字世界的探索者</title>
+    <script src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <style>
+        :root {
+            --matrix-green: #00ff41;
+            --matrix-dark-green: #003b09;
+            --bg-dark: #080808;
+            --text-primary: #e0e0e0;
+            --text-secondary: #00ff41;
+            --accent: #8a2be2;
+            --section-bg: rgba(0, 20, 0, 0.85);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Courier New', monospace;
+        }
+
+        body,
+        html {
+            overflow-x: hidden;
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            line-height: 1.6;
+            height: 100%;
+            position: relative;
+        }
+
+        #matrix-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        #root {
+            position: relative;
+            z-index: 1;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        header {
+            padding: 20px 0;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 10;
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            border-bottom: 1px solid var(--matrix-green);
+            transition: all 0.3s ease;
+        }
+
+        header.scrolled {
+            padding: 10px 0;
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--matrix-green);
+            text-shadow: 0 0 10px var(--matrix-green);
+            letter-spacing: 3px;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+
+        .nav-link {
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            position: relative;
+            padding: 5px 0;
+        }
+
+        .nav-link:hover {
+            color: var(--matrix-green);
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: var(--matrix-green);
+            transition: width 0.3s ease;
+        }
+
+        .nav-link:hover::after {
+            width: 100%;
+        }
+
+        .main-content {
+            margin-top: 100px;
+            min-height: calc(100vh - 100px);
+            padding-bottom: 50px;
+        }
+
+        section {
+            background-color: var(--section-bg);
+            border-radius: 10px;
+            padding: 30px;
+            margin: 40px auto;
+            border: 1px solid var(--matrix-green);
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent, rgba(0, 255, 65, 0.05), transparent);
+            animation: shine 3s infinite;
+            pointer-events: none;
+        }
+
+        @keyframes shine {
+            0% {
+                transform: translateX(-100%);
+            }
+
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: var(--matrix-green);
+            margin-bottom: 20px;
+            text-shadow: 0 0 5px var(--matrix-green);
+        }
+
+        h1 {
+            font-size: 3rem;
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        h2 {
+            font-size: 2.2rem;
+            border-bottom: 1px solid var(--matrix-green);
+            padding-bottom: 10px;
+        }
+
+        h3 {
+            font-size: 1.5rem;
+            margin-top: 30px;
+        }
+
+        p {
+            margin-bottom: 15px;
+            text-shadow: 0 0 2px rgba(224, 224, 224, 0.5);
+        }
+
+        .btn {
+            display: inline-block;
+            background-color: transparent;
+            color: var(--matrix-green);
+            border: 2px solid var(--matrix-green);
+            padding: 10px 20px;
+            font-size: 1rem;
+            text-decoration: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+            letter-spacing: 1px;
+            font-weight: bold;
+        }
+
+        .btn:hover {
+            background-color: var(--matrix-green);
+            color: var(--bg-dark);
+            box-shadow: 0 0 15px var(--matrix-green);
+        }
+
+        .timeline {
+            position: relative;
+            max-width: 1200px;
+            margin: 40px auto;
+        }
+
+        .timeline::after {
+            content: '';
+            position: absolute;
+            width: 6px;
+            background-color: var(--matrix-green);
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            margin-left: -3px;
+            box-shadow: 0 0 10px var(--matrix-green);
+        }
+
+        .timeline-item {
+            padding: 10px 40px;
+            position: relative;
+            width: 50%;
+            box-sizing: border-box;
+        }
+
+        .timeline-item:nth-child(odd) {
+            left: 0;
+        }
+
+        .timeline-item:nth-child(even) {
+            left: 50%;
+        }
+
+        .timeline-item::after {
+            content: '';
+            position: absolute;
+            width: 25px;
+            height: 25px;
+            right: -17px;
+            background-color: var(--bg-dark);
+            border: 4px solid var(--matrix-green);
+            top: 15px;
+            border-radius: 50%;
+            z-index: 1;
+            box-shadow: 0 0 10px var(--matrix-green);
+        }
+
+        .timeline-item:nth-child(even)::after {
+            left: -16px;
+        }
+
+        .timeline-content {
+            padding: 20px 30px;
+            background-color: rgba(0, 20, 0, 0.9);
+            position: relative;
+            border-radius: 6px;
+            border: 1px solid var(--matrix-green);
+        }
+
+        .timeline-date {
+            font-weight: bold;
+            color: var(--matrix-green);
+            margin-bottom: 10px;
+        }
+
+        .cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 30px;
+            margin: 40px 0;
+        }
+
+        .card {
+            background-color: rgba(0, 20, 0, 0.9);
+            border-radius: 10px;
+            padding: 25px;
+            border: 1px solid var(--matrix-green);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 20px rgba(0, 255, 65, 0.2);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(transparent, var(--matrix-green), transparent 30%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            transform: rotate(0deg);
+            animation: rotate 4s linear infinite;
+            pointer-events: none;
+        }
+
+        .card:hover::before {
+            opacity: 0.1;
+        }
+
+        @keyframes rotate {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            color: var(--matrix-green);
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 5px 10px;
+            background-color: var(--matrix-dark-green);
+            color: var(--matrix-green);
+            border-radius: 15px;
+            font-size: 0.8rem;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .project-links {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .project-link {
+            color: var(--matrix-green);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .project-link:hover {
+            text-decoration: underline;
+            text-shadow: 0 0 5px var(--matrix-green);
+        }
+
+        .radar-chart,
+        .globe-container,
+        .skill-tree,
+        .influence-map {
+            width: 100%;
+            height: 500px;
+            margin: 40px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .contact-form {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--matrix-green);
+        }
+
+        .form-input,
+        .form-textarea {
+            width: 100%;
+            padding: 12px;
+            background-color: rgba(0, 20, 0, 0.8);
+            border: 1px solid var(--matrix-green);
+            color: var(--text-primary);
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .form-input:focus,
+        .form-textarea:focus {
+            outline: none;
+            box-shadow: 0 0 10px var(--matrix-green);
+        }
+
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 40px 0;
+        }
+
+        .social-link {
+            color: var(--matrix-green);
+            font-size: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .social-link:hover {
+            transform: translateY(-5px);
+            text-shadow: 0 0 15px var(--matrix-green);
+        }
+
+        footer {
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 30px 0;
+            text-align: center;
+            border-top: 1px solid var(--matrix-green);
+        }
+
+        .footer-text {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .typing-effect {
+            border-right: 0.15em solid var(--matrix-green);
+            white-space: nowrap;
+            overflow: hidden;
+            margin: 0 auto;
+            letter-spacing: 0.15em;
+            animation: typing 3.5s steps(40, end), blink-caret 0.75s step-end infinite;
+        }
+
+        @keyframes typing {
+            from {
+                width: 0
+            }
+
+            to {
+                width: 100%
+            }
+        }
+
+        @keyframes blink-caret {
+
+            from,
+            to {
+                border-color: transparent
+            }
+
+            50% {
+                border-color: var(--matrix-green)
+            }
+        }
+
+        .glow-text {
+            animation: glow 1.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from {
+                text-shadow: 0 0 5px var(--matrix-green), 0 0 10px var(--matrix-green);
+            }
+
+            to {
+                text-shadow: 0 0 15px var(--matrix-green), 0 0 20px var(--matrix-green);
+            }
+        }
+
+        /* 媒体查询，支持响应式布局 */
+        @media screen and (max-width: 768px) {
+            .timeline::after {
+                left: 31px;
+            }
+
+            .timeline-item {
+                width: 100%;
+                padding-left: 70px;
+                padding-right: 25px;
+            }
+
+            .timeline-item:nth-child(even) {
+                left: 0;
+            }
+
+            .timeline-item:nth-child(odd)::after,
+            .timeline-item:nth-child(even)::after {
+                left: 15px;
+                right: auto;
+            }
+
+            .cards-container {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-links {
+                position: fixed;
+                top: 80px;
+                right: -100%;
+                width: 80%;
+                height: calc(100vh - 80px);
+                background-color: rgba(0, 0, 0, 0.95);
+                flex-direction: column;
+                align-items: center;
+                padding: 50px 0;
+                transition: right 0.5s ease;
+            }
+
+            .nav-links.active {
+                right: 0;
+            }
+
+            .mobile-menu-btn {
+                display: block;
+                cursor: pointer;
+                font-size: 1.5rem;
+                color: var(--matrix-green);
+            }
+
+            .logo {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="matrix-canvas"></canvas>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // Matrix 代码雨效果
+        const MatrixRain = () => {
+            React.useEffect(() => {
+                const canvas = document.getElementById('matrix-canvas');
+                const ctx = canvas.getContext('2d');
+
+                // 设置canvas尺寸为窗口尺寸
+                const resizeCanvas = () => {
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+                };
+
+                window.addEventListener('resize', resizeCanvas);
+                resizeCanvas();
+
+                // 中文字符集
+                const chineseChars = "田由甲申甴电甶男甸甹町画甼甽甾甿畀畁畂畃畄畅畆畇畈畉畊畋界畍畎畏畐畑";
+                // Matrix代码字符集
+                const matrixChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$+-*/=%\"'#&_(),.;:?!\\|{}<>[]^~";
+                // 合并字符集
+                const chars = chineseChars + matrixChars;
+
+                const fontSize = 16;
+                const columns = Math.ceil(canvas.width / fontSize);
+
+                // 每列的当前y位置
+                const drops = [];
+                for (let i = 0; i < columns; i++) {
+                    drops[i] = Math.random() * -100;
+                }
+
+                // 绘制Matrix效果
+                const draw = () => {
+                    // 半透明黑色背景，形成拖尾效果
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    // 设置文字样式
+                    ctx.fillStyle = '#00ff41';
+                    ctx.font = `${fontSize}px monospace`;
+
+                    // 对每一列进行操作
+                    for (let i = 0; i < drops.length; i++) {
+                        // 随机选择一个字符
+                        const text = chars.charAt(Math.floor(Math.random() * chars.length));
+
+                        // 计算x坐标
+                        const x = i * fontSize;
+                        // 计算y坐标
+                        const y = drops[i] * fontSize;
+
+                        // 绘制字符
+                        ctx.fillText(text, x, y);
+
+                        // 随机决定是否重置该列
+                        if (y > canvas.height && Math.random() > 0.975) {
+                            drops[i] = 0;
+                        }
+
+                        // 移动到下一行
+                        drops[i]++;
+                    }
+                };
+
+                // 启动动画
+                const interval = setInterval(draw, 50);
+
+                // 组件卸载时清除定时器
+                return () => {
+                    clearInterval(interval);
+                    window.removeEventListener('resize', resizeCanvas);
+                };
+            }, []);
+
+            return null;
+        };
+
+        // 人格雷达图组件
+        const PersonalityRadarChart = () => {
+            const radarRef = React.useRef(null);
+
+            React.useEffect(() => {
+                if (!radarRef.current) return;
+
+                const width = radarRef.current.clientWidth;
+                const height = radarRef.current.clientHeight;
+                const radius = Math.min(width, height) / 2 - 80;
+
+                // MBTI数据
+                const mbtiData = [
+                    { trait: "内向 (I)", value: 75 },
+                    { trait: "直觉 (N)", value: 90 },
+                    { trait: "思考 (T)", value: 85 },
+                    { trait: "判断 (J)", value: 70 },
+                    { trait: "外向 (E)", value: 25 },
+                    { trait: "感觉 (S)", value: 10 },
+                    { trait: "情感 (F)", value: 15 },
+                    { trait: "知觉 (P)", value: 30 }
+                ];
+
+                // 初始化SVG
+                const svg = d3.select(radarRef.current)
+                    .append('svg')
+                    .attr('width', width)
+                    .attr('height', height)
+                    .append('g')
+                    .attr('transform', `translate(${width / 2}, ${height / 2})`);
+
+                // 角度比例尺
+                const angleScale = d3.scaleLinear()
+                    .domain([0, mbtiData.length])
+                    .range([0, 2 * Math.PI]);
+
+                // 半径比例尺
+                const radiusScale = d3.scaleLinear()
+                    .domain([0, 100])
+                    .range([0, radius]);
+
+                // 绘制雷达图背景圆环
+                const circles = [20, 40, 60, 80, 100];
+                circles.forEach(value => {
+                    svg.append('circle')
+                        .attr('cx', 0)
+                        .attr('cy', 0)
+                        .attr('r', radiusScale(value))
+                        .attr('fill', 'none')
+                        .attr('stroke', '#00ff41')
+                        .attr('stroke-width', 1)
+                        .attr('stroke-opacity', 0.2)
+                        .attr('stroke-dasharray', '5,5');
+
+                    svg.append('text')
+                        .attr('x', 5)
+                        .attr('y', -radiusScale(value) - 5)
+                        .attr('fill', '#00ff41')
+                        .attr('font-size', '10px')
+                        .text(value + '%');
+                });
+
+                // 创建轴线
+                mbtiData.forEach((d, i) => {
+                    const angle = angleScale(i);
+                    const lineX = radius * Math.sin(angle);
+                    const lineY = -radius * Math.cos(angle);
+
+                    svg.append('line')
+                        .attr('x1', 0)
+                        .attr('y1', 0)
+                        .attr('x2', lineX)
+                        .attr('y2', lineY)
+                        .attr('stroke', '#00ff41')
+                        .attr('stroke-width', 1)
+                        .attr('stroke-opacity', 0.5);
+
+                    // 添加标签
+                    const labelX = (radius + 30) * Math.sin(angle);
+                    const labelY = -(radius + 30) * Math.cos(angle);
+
+                    svg.append('text')
+                        .attr('x', labelX)
+                        .attr('y', labelY)
+                        .attr('text-anchor', 'middle')
+                        .attr('fill', '#00ff41')
+                        .text(d.trait);
+                });
+
+                // 创建雷达图路径生成器
+                const radarLine = d3.lineRadial()
+                    .angle((d, i) => angleScale(i))
+                    .radius(d => radiusScale(d.value))
+                    .curve(d3.curveLinearClosed);
+
+                // 添加雷达图路径
+                svg.append('path')
+                    .datum(mbtiData)
+                    .attr('d', radarLine)
+                    .attr('fill', 'rgba(0, 255, 65, 0.2)')
+                    .attr('stroke', '#00ff41')
+                    .attr('stroke-width', 2);
+
+                // 添加数据点
+                mbtiData.forEach((d, i) => {
+                    const angle = angleScale(i);
+                    const x = radiusScale(d.value) * Math.sin(angle);
+                    const y = -radiusScale(d.value) * Math.cos(angle);
+
+                    svg.append('circle')
+                        .attr('cx', x)
+                        .attr('cy', y)
+                        .attr('r', 5)
+                        .attr('fill', '#00ff41')
+                        .attr('stroke', '#000')
+                        .attr('stroke-width', 1);
+
+                    // 添加值标签
+                    svg.append('text')
+                        .attr('x', x)
+                        .attr('y', y - 10)
+                        .attr('text-anchor', 'middle')
+                        .attr('fill', '#00ff41')
+                        .text(d.value + '%');
+                });
+
+                // 添加标题
+                svg.append('text')
+                    .attr('x', 0)
+                    .attr('y', -radius - 50)
+                    .attr('text-anchor', 'middle')
+                    .attr('fill', '#00ff41')
+                    .attr('font-size', '20px')
+                    .text('MBTI 人格分析 (INTJ)');
+
+                return () => {
+                    d3.select(radarRef.current).selectAll('*').remove();
+                };
+            }, []);
+
+            return <div ref={radarRef} className="radar-chart"></div>;
+        };
+
+        // 旅行地球组件
+        const TravelGlobe = () => {
+            const globeRef = React.useRef(null);
+
+            React.useEffect(() => {
+                if (!globeRef.current) return;
+
+                // 初始化Three.js场景
+                const scene = new THREE.Scene();
+                const camera = new THREE.PerspectiveCamera(75, globeRef.current.clientWidth / globeRef.current.clientHeight, 0.1, 1000);
+
+                const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                renderer.setSize(globeRef.current.clientWidth, globeRef.current.clientHeight);
+                renderer.setClearColor(0x000000, 0);
+                globeRef.current.appendChild(renderer.domElement);
+
+                // 创建地球
+                const earthGeometry = new THREE.SphereGeometry(5, 64, 64);
+
+                // 加载地球纹理
+                const textureLoader = new THREE.TextureLoader();
+                const earthTexture = new THREE.MeshPhongMaterial({
+                    color: 0x002200,
+                    emissive: 0x002200,
+                    specular: 0x222222,
+                    shininess: 25,
+                    transparent: true,
+                    opacity: 0.8,
+                    wireframe: true
+                });
+
+                const earth = new THREE.Mesh(earthGeometry, earthTexture);
+                scene.add(earth);
+
+                // 添加环境光和定向光
+                const ambientLight = new THREE.AmbientLight(0x333333);
+                scene.add(ambientLight);
+
+                const directionalLight = new THREE.DirectionalLight(0x00ff41, 1);
+                directionalLight.position.set(5, 3, 5);
+                scene.add(directionalLight);
+
+                // 城市位置数据
+                const cities = [
+                    { name: "福州", lat: 26.0614, lon: 119.3061, color: 0x00ff41 },
+                    { name: "武汉", lat: 30.5928, lon: 114.3055, color: 0x00ff41 },
+                    { name: "石家庄", lat: 38.0428, lon: 114.5149, color: 0x00ff41 },
+                    { name: "北京", lat: 39.9042, lon: 116.4074, color: 0x00ff41 }
+                ];
+
+                // 添加城市标记
+                cities.forEach(city => {
+                    // 经纬度转3D坐标
+                    const phi = (90 - city.lat) * (Math.PI / 180);
+                    const theta = (city.lon + 180) * (Math.PI / 180);
+
+                    const x = -5 * Math.sin(phi) * Math.cos(theta);
+                    const y = 5 * Math.cos(phi);
+                    const z = 5 * Math.sin(phi) * Math.sin(theta);
+
+                    // 创建城市光点
+                    const dotGeometry = new THREE.SphereGeometry(0.1, 16, 16);
+                    const dotMaterial = new THREE.MeshBasicMaterial({ color: city.color });
+                    const dot = new THREE.Mesh(dotGeometry, dotMaterial);
+                    dot.position.set(x, y, z);
+                    earth.add(dot);
+
+                    // 添加光环效果
+                    const ringGeometry = new THREE.RingGeometry(0.15, 0.2, 32);
+                    const ringMaterial = new THREE.MeshBasicMaterial({
+                        color: city.color,
+                        side: THREE.DoubleSide,
+                        transparent: true,
+                        opacity: 0.6
+                    });
+                    const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+                    ring.position.set(x, y, z);
+                    ring.lookAt(0, 0, 0);
+                    earth.add(ring);
+
+                    // 添加城市名称
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    canvas.width = 128;
+                    canvas.height = 64;
+                    context.font = '24px Arial';
+                    context.fillStyle = '#00ff41';
+                    context.fillText(city.name, 0, 24);
+
+                    const labelTexture = new THREE.CanvasTexture(canvas);
+                    const labelMaterial = new THREE.SpriteMaterial({
+                        map: labelTexture,
+                        transparent: true
+                    });
+                    const label = new THREE.Sprite(labelMaterial);
+                    label.position.set(x * 1.2, y * 1.2, z * 1.2);
+                    label.scale.set(2, 1, 1);
+                    earth.add(label);
+                });
+
+                // 设置相机位置
+                camera.position.z = 15;
+
+                // 添加星空背景
+                const starsGeometry = new THREE.BufferGeometry();
+                const starsMaterial = new THREE.PointsMaterial({
+                    color: 0xffffff,
+                    size: 0.1
+                });
+
+                const starsVertices = [];
+                for (let i = 0; i < 1000; i++) {
+                    const x = (Math.random() - 0.5) * 100;
+                    const y = (Math.random() - 0.5) * 100;
+                    const z = (Math.random() - 0.5) * 100;
+                    starsVertices.push(x, y, z);
+                }
+
+                starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starsVertices, 3));
+                const stars = new THREE.Points(starsGeometry, starsMaterial);
+                scene.add(stars);
+
+                // 动画循环
+                const animate = () => {
+                    requestAnimationFrame(animate);
+
+                    // 缓慢旋转地球
+                    earth.rotation.y += 0.005;
+
+                    renderer.render(scene, camera);
+                };
+
+                animate();
+
+                // 响应窗口大小变化
+                const handleResize = () => {
+                    camera.aspect = globeRef.current.clientWidth / globeRef.current.clientHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(globeRef.current.clientWidth, globeRef.current.clientHeight);
+                };
+
+                window.addEventListener('resize', handleResize);
+
+                return () => {
+                    window.removeEventListener('resize', handleResize);
+                    if (globeRef.current) {
+                        globeRef.current.removeChild(renderer.domElement);
+                    }
+                };
+            }, []);
+
+            return <div ref={globeRef} className="globe-container"></div>;
+        };
+
+        // 技能树组件
+        const SkillTree = () => {
+            const treeRef = React.useRef(null);
+
+            React.useEffect(() => {
+                if (!treeRef.current) return;
+
+                const width = treeRef.current.clientWidth;
+                const height = treeRef.current.clientHeight;
+
+                // 创建SVG
+                const svg = d3.select(treeRef.current)
+                    .append('svg')
+                    .attr('width', width)
+                    .attr('height', height);
+
+                // 技能树数据
+                const skillData = {
+                    name: "核心技能",
+                    value: 100,
+                    children: [
+                        {
+                            name: "前端开发",
+                            value: 90,
+                            children: [
+                                { name: "React", value: 95 },
+                                { name: "Vue", value: 85 },
+                                { name: "JavaScript", value: 90 },
+                                { name: "TypeScript", value: 80 },
+                                { name: "HTML/CSS", value: 90 }
+                            ]
+                        },
+                        {
+                            name: "后端开发",
+                            value: 85,
+                            children: [
+                                { name: "Node.js", value: 90 },
+                                { name: "Python", value: 85 },
+                                { name: "Java", value: 75 },
+                                { name: "数据库", value: 80 }
+                            ]
+                        },
+                        {
+                            name: "数据科学",
+                            value: 80,
+                            children: [
+                                { name: "机器学习", value: 75 },
+                                { name: "数据可视化", value: 85 },
+                                { name: "数据分析", value: 80 }
+                            ]
+                        },
+                        {
+                            name: "其他技能",
+                            value: 75,
+                            children: [
+                                { name: "设计", value: 70 },
+                                { name: "产品思维", value: 80 },
+                                { name: "项目管理", value: 75 }
+                            ]
+                        }
+                    ]
+                };
+
+                // 创建分层树状布局
+                const root = d3.hierarchy(skillData);
+                const treeLayout = d3.tree()
+                    .size([width - 100, height - 100]);
+
+                treeLayout(root);
+
+                // 创建节点与连线的容器
+                const g = svg.append('g')
+                    .attr('transform', `translate(50, 50)`);
+
+                // 创建连线
+                g.selectAll('.link')
+                    .data(root.links())
+                    .enter()
+                    .append('path')
+                    .attr('class', 'link')
+                    .attr('d', d3.linkHorizontal()
+                        .x(d => d.y)
+                        .y(d => d.x)
+                    )
+                    .attr('fill', 'none')
+                    .attr('stroke', '#00ff41')
+                    .attr('stroke-width', d => Math.max(1, d.target.data.value / 25))
+                    .attr('stroke-opacity', 0.6);
+
+                // 创建节点
+                const nodes = g.selectAll('.node')
+                    .data(root.descendants())
+                    .enter()
+                    .append('g')
+                    .attr('class', 'node')
+                    .attr('transform', d => `translate(${d.y}, ${d.x})`);
+
+                // 添加节点圆形
+                nodes.append('circle')
+                    .attr('r', d => Math.max(4, d.data.value / 10))
+                    .attr('fill', '#00ff41')
+                    .attr('stroke', '#003b09')
+                    .attr('stroke-width', 2);
+
+                // 添加技能名称
+                nodes.append('text')
+                    .attr('dy', d => d.children ? -15 : 5)
+                    .attr('x', d => d.children ? 0 : 15)
+                    .attr('text-anchor', d => d.children ? 'middle' : 'start')
+                    .text(d => d.data.name)
+                    .attr('fill', '#00ff41')
+                    .attr('font-size', d => Math.max(10, d.data.value / 10));
+
+                // 添加技能等级
+                nodes.append('text')
+                    .attr('dy', d => d.children ? 5 : 25)
+                    .attr('x', d => d.children ? 0 : 15)
+                    .attr('text-anchor', d => d.children ? 'middle' : 'start')
+                    .text(d => d.data.value ? `${d.data.value}%` : '')
+                    .attr('fill', '#00ff41')
+                    .attr('font-size', 10);
+
+                return () => {
+                    d3.select(treeRef.current).selectAll('*').remove();
+                };
+            }, []);
+
+            return <div ref={treeRef} className="skill-tree"></div>;
+        };
+
+        // 影响力星系图组件
+        const InfluenceGalaxy = () => {
+            const galaxyRef = React.useRef(null);
+
+            React.useEffect(() => {
+                if (!galaxyRef.current) return;
+
+                const width = galaxyRef.current.clientWidth;
+                const height = galaxyRef.current.clientHeight;
+
+                // 创建SVG
+                const svg = d3.select(galaxyRef.current)
+                    .append('svg')
+                    .attr('width', width)
+                    .attr('height', height);
+
+                // 增加滤镜效果
+                const defs = svg.append('defs');
+
+                // 创建发光效果
+                const filter = defs.append('filter')
+                    .attr('id', 'glow')
+                    .attr('x', '-50%')
+                    .attr('y', '-50%')
+                    .attr('width', '200%')
+                    .attr('height', '200%');
+
+                filter.append('feGaussianBlur')
+                    .attr('stdDeviation', '2.5')
+                    .attr('result', 'coloredBlur');
+
+                const feMerge = filter.append('feMerge');
+                feMerge.append('feMergeNode')
+                    .attr('in', 'coloredBlur');
+                feMerge.append('feMergeNode')
+                    .attr('in', 'SourceGraphic');
+
+                // 影响力数据
+                const influenceData = [
+                    { name: "技术博客", category: "内容创作", value: 85, radius: 40, x: width / 2, y: height / 2 },
+                    { name: "开源项目", category: "社区贡献", value: 90, radius: 35, angle: 0 },
+                    { name: "技术分享", category: "知识传播", value: 80, radius: 30, angle: Math.PI / 3 },
+                    { name: "导师指导", category: "人才培养", value: 75, radius: 25, angle: 2 * Math.PI / 3 },
+                    { name: "行业会议", category: "影响力扩展", value: 65, radius: 20, angle: Math.PI },
+                    { name: "技术评审", category: "专业认可", value: 70, radius: 25, angle: 4 * Math.PI / 3 },
+                    { name: "跨界合作", category: "创新融合", value: 60, radius: 20, angle: 5 * Math.PI / 3 }
+                ];
+
+                // 计算节点位置
+                const centerX = width / 2;
+                const centerY = height / 2;
+                const orbitRadius = Math.min(width, height) / 3;
+
+                // 为中心节点以外的节点计算位置
+                for (let i = 1; i < influenceData.length; i++) {
+                    const node = influenceData[i];
+                    const angle = node.angle;
+                    node.x = centerX + orbitRadius * Math.cos(angle);
+                    node.y = centerY + orbitRadius * Math.sin(angle);
+                }
+
+                // 创建连线
+                svg.selectAll('.influence-link')
+                    .data(influenceData.slice(1))
+                    .enter()
+                    .append('line')
+                    .attr('class', 'influence-link')
+                    .attr('x1', centerX)
+                    .attr('y1', centerY)
+                    .attr('x2', d => d.x)
+                    .attr('y2', d => d.y)
+                    .attr('stroke', '#00ff41')
+                    .attr('stroke-width', d => d.value / 20)
+                    .attr('stroke-opacity', 0.4)
+                    .attr('filter', 'url(#glow)');
+
+                // 创建节点
+                const nodes = svg.selectAll('.influence-node')
+                    .data(influenceData)
+                    .enter()
+                    .append('g')
+                    .attr('class', 'influence-node')
+                    .attr('transform', d => `translate(${d.x}, ${d.y})`);
+
+                // 添加节点圆形
+                nodes.append('circle')
+                    .attr('r', d => d.radius)
+                    .attr('fill', d => d.category === '内容创作' ? '#00ff41' : '#003b09')
+                    .attr('stroke', '#00ff41')
+                    .attr('stroke-width', 2)
+                    .attr('fill-opacity', 0.7)
+                    .attr('filter', 'url(#glow)');
+
+                // 添加节点标签
+                nodes.append('text')
+                    .attr('dy', 0)
+                    .attr('text-anchor', 'middle')
+                    .text(d => d.name)
+                    .attr('fill', '#00ff41')
+                    .attr('font-size', d => d.radius / 2);
+
+                // 添加类别标签
+                nodes.append('text')
+                    .attr('dy', 15)
+                    .attr('text-anchor', 'middle')
+                    .text(d => d.category)
+                    .attr('fill', '#00ff41')
+                    .attr('font-size', d => d.radius / 3);
+
+                // 添加影响力值
+                nodes.append('text')
+                    .attr('dy', -15)
+                    .attr('text-anchor', 'middle')
+                    .text(d => `${d.value}%`)
+                    .attr('fill', '#00ff41')
+                    .attr('font-size', d => d.radius / 3);
+
+                // 添加动画效果
+                function pulseNodes() {
+                    svg.selectAll('.influence-node circle')
+                        .transition()
+                        .duration(2000)
+                        .attr('r', d => d.radius * 1.1)
+                        .transition()
+                        .duration(2000)
+                        .attr('r', d => d.radius)
+                        .on('end', pulseNodes);
+                }
+
+                pulseNodes();
+
+                // 添加轨道路径
+                svg.append('circle')
+                    .attr('cx', centerX)
+                    .attr('cy', centerY)
+                    .attr('r', orbitRadius)
+                    .attr('fill', 'none')
+                    .attr('stroke', '#00ff41')
+                    .attr('stroke-width', 1)
+                    .attr('stroke-opacity', 0.3)
+                    .attr('stroke-dasharray', '5,5');
+
+                return () => {
+                    d3.select(galaxyRef.current).selectAll('*').remove();
+                };
+            }, []);
+
+            return <div ref={galaxyRef} className="influence-map"></div>;
+        };
+
+        // 主App组件
+        const App = () => {
+            const [activeSection, setActiveSection] = React.useState('home');
+            const [menuOpen, setMenuOpen] = React.useState(false);
+
+            React.useEffect(() => {
+                const handleScroll = () => {
+                    const header = document.querySelector('header');
+                    if (window.scrollY > 50) {
+                        header.classList.add('scrolled');
+                    } else {
+                        header.classList.remove('scrolled');
+                    }
+                };
+
+                window.addEventListener('scroll', handleScroll);
+
+                return () => {
+                    window.removeEventListener('scroll', handleScroll);
+                };
+            }, []);
+
+            const toggleMenu = () => {
+                setMenuOpen(!menuOpen);
+            };
+
+            return (
+                <>
+                    <MatrixRain />
+
+                    <header>
+                        <div className="container">
+                            <nav>
+                                <div className="logo glow-text">JIA</div>
+                                <div className={`nav-links ${menuOpen ? 'active' : ''}`}>
+                                    <a href="#home" className="nav-link" onClick={() => { setActiveSection('home'); setMenuOpen(false); }}>主页</a>
+                                    <a href="#about" className="nav-link" onClick={() => { setActiveSection('about'); setMenuOpen(false); }}>关于我</a>
+                                    <a href="#resume" className="nav-link" onClick={() => { setActiveSection('resume'); setMenuOpen(false); }}>简历</a>
+                                    <a href="#blog" className="nav-link" onClick={() => { setActiveSection('blog'); setMenuOpen(false); }}>博客</a>
+                                    <a href="#projects" className="nav-link" onClick={() => { setActiveSection('projects'); setMenuOpen(false); }}>项目</a>
+                                    <a href="#contact" className="nav-link" onClick={() => { setActiveSection('contact'); setMenuOpen(false); }}>联系</a>
+                                </div>
+                                <div className="mobile-menu-btn" onClick={toggleMenu}>
+                                    &#9776;
+                                </div>
+                            </nav>
+                        </div>
+                    </header>
+
+                    <div className="main-content">
+                        <div className="container">
+                            <section id="home">
+                                <h1 className="typing-effect">欢迎来到我的数字世界</h1>
+                                <p className="glow-text" style={{ textAlign: 'center', fontSize: '1.5rem', marginBottom: '40px' }}>
+                                    我是JIA，一位技术探索者、创新者和终身学习者
+                                </p>
+
+                                <div style={{ textAlign: 'center', marginTop: '30px' }}>
+                                    <a href="#about" className="btn">探索我的故事</a>
+                                </div>
+                            </section>
+
+                            <section id="about">
+                                <h2>关于我</h2>
+                                <p>我是一位充满激情的技术爱好者，热衷于探索数字世界的无限可能。从早期接触编程的懵懂少年，到如今的全栈开发者，我始终保持着对技术的好奇心和探索欲。</p>
+
+                                <p>我的技术之旅始于大学时期，当时偶然接触到一本《C语言程序设计》，从此开启了我的编程之路。大学期间，我深入学习了计算机科学的基础知识，并且开始涉足Web开发领域。毕业后，我加入了一家初创公司，负责前端开发工作，这段经历让我深刻理解了用户体验的重要性。</p>
+
+                                <p>随后几年，我不断拓展自己的技术栈，从前端到后端，从移动开发到数据分析，我始终保持学习的态度，不断挑战自我。我相信，技术不仅仅是工具，更是改变世界的力量。通过我的代码和创意，我希望能够为这个世界带来一些积极的变化。</p>
+
+                                <h3>我的价值观</h3>
+                                <p>我坚信持续学习的力量。在这个技术快速迭代的时代，唯有不断学习，才能保持竞争力。同时，我也重视团队协作和开放分享。我经常参与开源项目，并通过技术博客分享我的知识和经验。</p>
+
+                                <p>在工作中，我追求卓越和创新。我不仅关注代码的质量和性能，更关注产品的用户体验和业务价值。我相信，真正优秀的技术解决方案应该是既满足技术标准，又能够为用户和业务创造价值的。</p>
+
+                                <h3>个性特点</h3>
+                                <PersonalityRadarChart />
+
+                                <p>作为一个INTJ型人格，我擅长系统思考和策略规划。我喜欢挑战复杂问题，并通过逻辑和创新思维寻找解决方案。虽然我偏向内向，但在专业领域中，我善于表达自己的想法和见解。</p>
+
+                                <h3>我的足迹</h3>
+                                <p>从福州到北京，我的人生轨迹跨越了中国的多个城市。每一次的迁徙都带给我新的视角和经历，丰富了我的人生阅历。</p>
+
+                                <TravelGlobe />
+                            </section>
+
+                            <section id="resume">
+                                <h2>职业经历</h2>
+
+                                <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+                                    <a href="#" className="btn">下载完整简历 (PDF)</a>
+                                </div>
+
+                                <div className="timeline">
+                                    <div className="timeline-item">
+                                        <div className="timeline-content">
+                                            <div className="timeline-date">2023年 - 至今</div>
+                                            <h3>高级全栈开发工程师</h3>
+                                            <p>某知名科技公司</p>
+                                            <p>负责公司核心产品的架构设计和技术实现，带领团队完成多个关键项目，推动了公司技术栈的现代化升级。</p>
+                                            <p>主要成就：</p>
+                                            <p>• 重构了公司核心应用，将加载时间减少50%</p>
+                                            <p>• 设计并实现了微服务架构，提高了系统的可扩展性</p>
+                                            <p>• 引入了自动化测试和CI/CD流程，提高了开发效率和代码质量</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="timeline-item">
+                                        <div className="timeline-content">
+                                            <div className="timeline-date">2020年 - 2023年</div>
+                                            <h3>前端技术负责人</h3>
+                                            <p>某互联网创新企业</p>
+                                            <p>负责公司所有前端项目的技术选型和架构设计，管理前端团队，确保项目高质量交付。</p>
+                                            <p>主要成就：</p>
+                                            <p>• 建立了前端开发规范和组件库，提高了团队开发效率</p>
+                                            <p>• 主导了公司从传统jQuery到React的技术升级</p>
+                                            <p>• 开发了多个高性能、响应式的用户界面，大幅提升了用户体验</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="timeline-item">
+                                        <div className="timeline-content">
+                                            <div className="timeline-date">2017年 - 2020年</div>
+                                            <h3>Web开发工程师</h3>
+                                            <p>某互联网公司</p>
+                                            <p>参与公司多个Web应用的开发，负责前端界面实现和后端API对接。</p>
+                                            <p>主要成就：</p>
+                                            <p>• 独立完成了公司电商平台的前端开发</p>
+                                            <p>• 优化了网站性能，提高了页面加载速度30%</p>
+                                            <p>• 参与设计并实现了公司内部管理系统</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="timeline-item">
+                                        <div className="timeline-content">
+                                            <div className="timeline-date">2013年 - 2017年</div>
+                                            <h3>计算机科学与技术</h3>
+                                            <p>某知名大学</p>
+                                            <p>主修课程：数据结构、算法分析、操作系统、计算机网络、数据库系统、软件工程等。</p>
+                                            <p>主要成就：</p>
+                                            <p>• 获得校级编程竞赛一等奖</p>
+                                            <p>• 参与多个开源项目，贡献了数百行代码</p>
+                                            <p>• 毕业设计获得优秀评价</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <h3>技能树</h3>
+                                <p>多年来，我构建了一个全面的技能体系，涵盖了前端、后端、数据科学等多个领域。</p>
+
+                                <SkillTree />
+
+                                <h3>影响力星图</h3>
+                                <p>除了技术开发，我也积极参与技术社区，通过多种方式扩展我的影响力。</p>
+
+                                <InfluenceGalaxy />
+                            </section>
+
+                            <section id="blog">
+                                <h2>博客文章</h2>
+
+                                <div className="cards-container">
+                                    <div className="card">
+                                        <div className="card-title">React性能优化的艺术</div>
+                                        <div className="tag">技术</div>
+                                        <div className="tag">React</div>
+                                        <div className="tag">前端</div>
+                                        <p>探索React应用性能优化的多种策略，从组件结构到渲染优化，全面提升你的React应用性能。</p>
+                                        <a href="#" className="btn">阅读全文</a>
+                                    </div>
+
+                                    <div className="card">
+                                        <div className="card-title">微服务架构实践指南</div>
+                                        <div className="tag">技术</div>
+                                        <div className="tag">架构</div>
+                                        <div className="tag">后端</div>
+                                        <p>基于实际项目经验，分享微服务架构的设计原则、实施策略和常见陷阱，助你构建可靠的微服务系统。</p>
+                                        <a href="#" className="btn">阅读全文</a>
+                                    </div>
+
+                                    <div className="card">
+                                        <div className="card-title">从零开始的机器学习之旅</div>
+                                        <div className="tag">技术</div>
+                                        <div className="tag">机器学习</div>
+                                        <div className="tag">Python</div>
+                                        <p>带你从基础概念开始，一步步进入机器学习的世界，通过实例学习各种算法和模型的应用。</p>
+                                        <a href="#" className="btn">阅读全文</a>
+                                    </div>
+                                </div>
+
+                                <div className="cards-container">
+                                    <div className="card">
+                                        <div className="card-title">技术人的思维模式</div>
+                                        <div className="tag">思考</div>
+                                        <div className="tag">职业发展</div>
+                                        <p>探讨技术人特有的思维方式，以及如何利用这种思维模式在工作和生活中取得更大的成功。</p>
+                                        <a href="#" className="btn">阅读全文</a>
+                                    </div>
+
+                                    <div className="card">
+                                        <div className="card-title">数据可视化的力量</div>
+                                        <div className="tag">技术</div>
+                                        <div className="tag">数据</div>
+                                        <div className="tag">可视化</div>
+                                        <p>通过实例展示数据可视化如何将复杂数据转化为直观信息，帮助决策者做出更明智的选择。</p>
+                                        <a href="#" className="btn">阅读全文</a>
+                                    </div>
+
+                                    <div className="card">
+                                        <div className="card-title">AI时代的伦理思考</div>
+                                        <div className="tag">思考</div>
+                                        <div className="tag">AI</div>
+                                        <div className="tag">伦理</div>
+                                        <p>在人工智能快速发展的今天，我们需要思考的不仅是技术本身，还有它带来的伦理挑战和社会影响。</p>
+                                        <a href="#" className="btn">阅读全文</a>
+                                    </div>
+                                </div>
+
+                                <div style={{ textAlign: 'center', marginTop: '30px' }}>
+                                    <a href="#" className="btn">查看更多文章</a>
+                                </div>
+                            </section>
+
+                            <section id="projects">
+                                <h2>项目展示</h2>
+
+                                <div className="cards-container">
+                                    <div className="card">
+                                        <div className="card-title">智能数据分析平台</div>
+                                        <div className="tag">React</div>
+                                        <div className="tag">Node.js</div>
+                                        <div className="tag">机器学习</div>
+                                        <p>一个集数据收集、清洗、分析和可视化于一体的平台，帮助企业从海量数据中提取有价值的信息。</p>
+                                        <div className="project-links">
+                                            <a href="#" className="project-link">查看代码</a>
+                                            <a href="#" className="project-link">在线演示</a>
+                                        </div>
+                                    </div>
+
+                                    <div className="card">
+                                        <div className="card-title">实时协作编辑器</div>
+                                        <div className="tag">WebSocket</div>
+                                        <div className="tag">React</div>
+                                        <div className="tag">MongoDB</div>
+                                        <p>支持多人同时编辑的在线文档工具，类似于Google Docs，但专注于代码和技术文档的协作编辑。</p>
+                                        <div className="project-links">
+                                            <a href="#" className="project-link">查看代码</a>
+                                            <a href="#" className="project-link">在线演示</a>
+                                        </div>
+                                    </div>
+
+                                    <div className="card">
+                                        <div className="card-title">区块链投票系统</div>
+                                        <div className="tag">区块链</div>
+                                        <div className="tag">以太坊</div>
+                                        <div className="tag">智能合约</div>
+                                        <p>基于以太坊区块链的去中心化投票系统，确保投票过程的透明性和不可篡改性，适用于各类需要公正投票的场景。</p>
+                                        <div className="project-links">
+                                            <a href="#" className="project-link">查看代码</a>
+                                            <a href="#" className="project-link">在线演示</a>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="cards-container">
+                                    <div className="card">
+                                        <div className="card-title">AI图像处理工具</div>
+                                        <div className="tag">Python</div>
+                                        <div className="tag">TensorFlow</div>
+                                        <div className="tag">Computer Vision</div>
+                                        <p>利用深度学习技术的图像处理工具，支持图像风格迁移、物体检测、图像修复等多种功能。</p>
+                                        <div className="project-links">
+                                            <a href="#" className="project-link">查看代码</a>
+                                            <a href="#" className="project-link">在线演示</a>
+                                        </div>
+                                    </div>
+
+                                    <div className="card">
+                                        <div className="card-title">React组件库</div>
+                                        <div className="tag">React</div>
+                                        <div className="tag">TypeScript</div>
+                                        <div className="tag">UI/UX</div>
+                                        <p>一个现代化、高性能的React UI组件库，覆盖常见的界面元素和交互模式，支持主题定制和响应式设计。</p>
+                                        <div className="project-links">
+                                            <a href="#" className="project-link">查看代码</a>
+                                            <a href="#" className="project-link">在线演示</a>
+                                        </div>
+                                    </div>
+
+                                    <div className="card">
+                                        <div className="card-title">个人知识管理系统</div>
+                                        <div className="tag">Vue</div>
+                                        <div className="tag">GraphQL</div>
+                                        <div className="tag">Electron</div>
+                                        <p>一个集笔记、待办事项、资源管理于一体的个人知识管理工具，支持知识图谱可视化和智能推荐。</p>
+                                        <div className="project-links">
+                                            <a href="#" className="project-link">查看代码</a>
+                                            <a href="#" className="project-link">在线演示</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section id="contact">
+                                <h2>联系我</h2>
+
+                                <div className="contact-form">
+                                    <div className="form-group">
+                                        <label className="form-label">姓名</label>
+                                        <input type="text" className="form-input" placeholder="请输入您的姓名" />
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label className="form-label">邮箱</label>
+                                        <input type="email" className="form-input" placeholder="请输入您的邮箱" />
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label className="form-label">主题</label>
+                                        <input type="text" className="form-input" placeholder="请输入主题" />
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label className="form-label">消息</label>
+                                        <textarea className="form-textarea" placeholder="请输入您的消息"></textarea>
+                                    </div>
+
+                                    <button type="submit" className="btn">发送消息</button>
+                                </div>
+
+                                <div className="social-links">
+                                    <a href="#" className="social-link">
+                                        &#128235; <!-- 邮箱 -->
+                                    </a>
+                                    <a href="#" className="social-link">
+                                        &#128187; <!-- GitHub -->
+                                    </a>
+                                    <a href="#" className="social-link">
+                                        &#128101; <!-- LinkedIn -->
+                                    </a>
+                                    <a href="#" className="social-link">
+                                        &#128172; <!-- Twitter -->
+                                    </a>
+                                </div>
+
+                                <div style={{ textAlign: 'center', marginTop: '30px' }}>
+                                    <a href="#" className="btn">预约线上会议</a>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+
+                    <footer>
+                        <div className="container">
+                            <p className="footer-text">© 2025 JIA | 数字世界的探索者 | 技术改变生活</p>
+                        </div>
+                    </footer>
+                </>
+            );
+        };
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+
+</html>
