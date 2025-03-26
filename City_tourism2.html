@@ -1,0 +1,1532 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>世界城市3D旅游卡片</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(45deg, #1a1a2e, #16213e);
+            overflow: hidden;
+            padding: 20px 0;
+        }
+
+        .container {
+            position: relative;
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .city-selector {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            width: 100%;
+        }
+
+        .city-btn {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .city-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .city-btn.active {
+            background: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+        }
+
+        .region-title {
+            color: white;
+            margin: 15px 0 10px 0;
+            font-size: 1.2rem;
+            opacity: 0.8;
+            text-align: center;
+            width: 100%;
+        }
+
+        .card-container {
+            perspective: 1000px;
+            width: 100%;
+            max-width: 400px;
+            height: 600px;
+        }
+
+        .card {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.8s ease;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+        }
+
+        .card:hover {
+            transform: rotateY(10deg) rotateX(5deg);
+        }
+
+        .card-front {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 20px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            filter: brightness(0.8);
+            z-index: 1;
+            transition: all 0.5s ease;
+        }
+
+        .card-content {
+            position: relative;
+            z-index: 2;
+            padding: 30px;
+            color: white;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .city-name {
+            font-size: 3rem;
+            font-weight: bold;
+            text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.7);
+            margin-bottom: 10px;
+        }
+
+        .landmark-name {
+            font-size: 1.2rem;
+            text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.7);
+            margin-bottom: 20px;
+            opacity: 0.9;
+        }
+
+        .weather-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .weather-icon {
+            font-size: 3rem;
+            text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.7);
+        }
+
+        .weather-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .temperature {
+            font-size: 2.2rem;
+            font-weight: bold;
+            text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.7);
+        }
+
+        .condition {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.7);
+        }
+
+        .description {
+            font-size: 1rem;
+            line-height: 1.6;
+            text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.7);
+            margin-top: 20px;
+            opacity: 0.9;
+        }
+
+        /* 特效容器 */
+        .effects-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* 樱花飘落效果 */
+        .sakura {
+            position: absolute;
+            background: rgba(255, 223, 228, 0.8);
+            border-radius: 50% 0 50% 50%;
+            animation: fall linear infinite, drift ease-in-out infinite;
+            transform-origin: center;
+            opacity: 0.7;
+        }
+
+        @keyframes fall {
+            0% {
+                top: -10%;
+                transform: rotate(0deg);
+            }
+
+            100% {
+                top: 100%;
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes drift {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            50% {
+                transform: translateX(30px);
+            }
+        }
+
+        /* 雪花效果 */
+        .snowflake {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            animation: snowfall linear infinite, snowdrift ease-in-out infinite;
+            opacity: 0.7;
+        }
+
+        @keyframes snowfall {
+            0% {
+                top: -10%;
+                transform: rotate(0deg);
+            }
+
+            100% {
+                top: 100%;
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes snowdrift {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            50% {
+                transform: translateX(20px);
+            }
+        }
+
+        /* 雨滴效果 */
+        .raindrop {
+            position: absolute;
+            background: rgba(210, 235, 255, 0.8);
+            border-radius: 0% 50% 50% 50%;
+            transform: rotate(45deg);
+            animation: rainfall linear infinite;
+            opacity: 0.5;
+        }
+
+        @keyframes rainfall {
+            0% {
+                top: -10%;
+            }
+
+            100% {
+                top: 100%;
+            }
+        }
+
+        /* 云朵效果 */
+        .cloud {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            animation: cloud-drift linear infinite;
+            box-shadow:
+                10px 10px 0 rgba(255, 255, 255, 0.7),
+                20px 0 0 rgba(255, 255, 255, 0.7),
+                30px 10px 0 rgba(255, 255, 255, 0.7);
+            z-index: 1;
+        }
+
+        @keyframes cloud-drift {
+            0% {
+                left: -10%;
+            }
+
+            100% {
+                left: 110%;
+            }
+        }
+
+        /* 落叶效果 */
+        .leaf {
+            position: absolute;
+            background: rgba(139, 69, 19, 0.7);
+            border-radius: 50% 0% 50% 0%;
+            animation: leaf-fall linear infinite, leaf-drift ease-in-out infinite;
+            transform-origin: center;
+            opacity: 0.6;
+        }
+
+        @keyframes leaf-fall {
+            0% {
+                top: -10%;
+                transform: rotate(0deg);
+            }
+
+            100% {
+                top: 100%;
+                transform: rotate(720deg);
+            }
+        }
+
+        @keyframes leaf-drift {
+
+            0%,
+            100% {
+                transform: translateX(0) rotate(0deg);
+            }
+
+            50% {
+                transform: translateX(50px) rotate(20deg);
+            }
+        }
+
+        /* 沙尘效果 */
+        .sand {
+            position: absolute;
+            background: rgba(210, 180, 140, 0.5);
+            border-radius: 50%;
+            animation: sand-drift linear infinite;
+            opacity: 0.4;
+        }
+
+        @keyframes sand-drift {
+            0% {
+                transform: translateX(-100%) translateY(0);
+            }
+
+            100% {
+                transform: translateX(100%) translateY(0);
+            }
+        }
+
+        /* 极光效果 */
+        .aurora {
+            position: absolute;
+            height: 200px;
+            width: 100%;
+            background: linear-gradient(0deg,
+                    rgba(0, 255, 0, 0),
+                    rgba(0, 255, 100, 0.3),
+                    rgba(100, 200, 255, 0.2),
+                    rgba(0, 0, 255, 0.1));
+            filter: blur(20px);
+            border-radius: 50% 50% 0 0;
+            animation: aurora-wave 8s ease-in-out infinite;
+            opacity: 0.7;
+            top: 50px;
+        }
+
+        @keyframes aurora-wave {
+
+            0%,
+            100% {
+                height: 180px;
+                opacity: 0.7;
+            }
+
+            50% {
+                height: 200px;
+                opacity: 0.9;
+            }
+        }
+
+        /* 热带鸟类效果 */
+        .tropical-bird {
+            position: absolute;
+            width: 15px;
+            height: 8px;
+            background: rgba(255, 0, 0, 0.8);
+            border-radius: 50% 50% 0 0;
+            transform: rotate(-10deg);
+            animation: bird-fly linear infinite;
+            z-index: 2;
+        }
+
+        .tropical-bird::before,
+        .tropical-bird::after {
+            content: '';
+            position: absolute;
+            width: 10px;
+            height: 3px;
+            background: rgba(255, 0, 0, 0.8);
+            top: 3px;
+            border-radius: 50%;
+        }
+
+        .tropical-bird::before {
+            left: -5px;
+            transform: rotate(-20deg);
+        }
+
+        .tropical-bird::after {
+            right: -5px;
+            transform: rotate(20deg);
+        }
+
+        @keyframes bird-fly {
+            0% {
+                left: -5%;
+                top: 30%;
+            }
+
+            20% {
+                top: 20%;
+            }
+
+            40% {
+                top: 25%;
+            }
+
+            60% {
+                top: 15%;
+            }
+
+            80% {
+                top: 30%;
+            }
+
+            100% {
+                left: 105%;
+                top: 25%;
+            }
+        }
+
+        /* 落花效果 */
+        .flower {
+            position: absolute;
+            background: rgba(255, 192, 203, 0.7);
+            border-radius: 50%;
+            animation: flower-fall linear infinite, flower-drift ease-in-out infinite;
+            transform-origin: center;
+            box-shadow:
+                3px 0px 0 rgba(255, 192, 203, 0.7),
+                0px 3px 0 rgba(255, 192, 203, 0.7),
+                -3px 0px 0 rgba(255, 192, 203, 0.7),
+                0px -3px 0 rgba(255, 192, 203, 0.7);
+            opacity: 0.7;
+        }
+
+        @keyframes flower-fall {
+            0% {
+                top: -10%;
+                transform: rotate(0deg);
+            }
+
+            100% {
+                top: 100%;
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes flower-drift {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            50% {
+                transform: translateX(30px);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .card-container {
+                height: 500px;
+            }
+
+            .city-name {
+                font-size: 2.2rem;
+            }
+
+            .temperature {
+                font-size: 1.8rem;
+            }
+
+            .description {
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .card-container {
+                height: 450px;
+            }
+
+            .city-name {
+                font-size: 1.8rem;
+            }
+
+            .landmark-name {
+                font-size: 1rem;
+            }
+
+            .city-btn {
+                padding: 6px 12px;
+                font-size: 0.9rem;
+            }
+
+            .weather-icon {
+                font-size: 2.2rem;
+            }
+
+            .temperature {
+                font-size: 1.5rem;
+            }
+
+            .condition {
+                font-size: 1rem;
+            }
+        }
+
+        /* 搜索框样式 */
+        .search-container {
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 20px;
+            border-radius: 30px;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+        }
+
+        .search-input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="search-container">
+            <input type="text" class="search-input" placeholder="搜索城市..." id="citySearch">
+        </div>
+
+        <div class="city-selector">
+            <div class="region-title">中国城市</div>
+            <button class="city-btn active" data-city="wuhan">武汉</button>
+            <button class="city-btn" data-city="beijing">北京</button>
+            <button class="city-btn" data-city="shanghai">上海</button>
+            <button class="city-btn" data-city="guangzhou">广州</button>
+            <button class="city-btn" data-city="chengdu">成都</button>
+            <button class="city-btn" data-city="hangzhou">杭州</button>
+            <button class="city-btn" data-city="xian">西安</button>
+            <button class="city-btn" data-city="lhasa">拉萨</button>
+            <button class="city-btn" data-city="harbin">哈尔滨</button>
+            <button class="city-btn" data-city="xiamen">厦门</button>
+            <button class="city-btn" data-city="guilin">桂林</button>
+            <button class="city-btn" data-city="suzhou">苏州</button>
+
+            <div class="region-title">亚洲城市</div>
+            <button class="city-btn" data-city="tokyo">东京</button>
+            <button class="city-btn" data-city="osaka">大阪</button>
+            <button class="city-btn" data-city="kyoto">京都</button>
+            <button class="city-btn" data-city="seoul">首尔</button>
+            <button class="city-btn" data-city="bangkok">曼谷</button>
+            <button class="city-btn" data-city="singapore">新加坡</button>
+            <button class="city-btn" data-city="bali">巴厘岛</button>
+            <button class="city-btn" data-city="dubai">迪拜</button>
+
+            <div class="region-title">欧洲城市</div>
+            <button class="city-btn" data-city="paris">巴黎</button>
+            <button class="city-btn" data-city="london">伦敦</button>
+            <button class="city-btn" data-city="rome">罗马</button>
+            <button class="city-btn" data-city="barcelona">巴塞罗那</button>
+            <button class="city-btn" data-city="venice">威尼斯</button>
+            <button class="city-btn" data-city="santorini">圣托里尼</button>
+            <button class="city-btn" data-city="prague">布拉格</button>
+            <button class="city-btn" data-city="vienna">维也纳</button>
+            <button class="city-btn" data-city="amsterdam">阿姆斯特丹</button>
+            <button class="city-btn" data-city="istanbul">伊斯坦布尔</button>
+            <button class="city-btn" data-city="stockholm">斯德哥尔摩</button>
+
+            <div class="region-title">美洲城市</div>
+            <button class="city-btn" data-city="newyork">纽约</button>
+            <button class="city-btn" data-city="sanfrancisco">旧金山</button>
+            <button class="city-btn" data-city="lasvegas">拉斯维加斯</button>
+            <button class="city-btn" data-city="losangeles">洛杉矶</button>
+            <button class="city-btn" data-city="vancouver">温哥华</button>
+            <button class="city-btn" data-city="riodejaneiro">里约热内卢</button>
+            <button class="city-btn" data-city="havana">哈瓦那</button>
+            <button class="city-btn" data-city="cancun">坎昆</button>
+
+            <div class="region-title">大洋洲与非洲城市</div>
+            <button class="city-btn" data-city="sydney">悉尼</button>
+            <button class="city-btn" data-city="melbourne">墨尔本</button>
+            <button class="city-btn" data-city="queenstown">皇后镇</button>
+            <button class="city-btn" data-city="cairo">开罗</button>
+            <button class="city-btn" data-city="capetown">开普敦</button>
+            <button class="city-btn" data-city="marrakech">马拉喀什</button>
+        </div>
+
+        <div class="card-container">
+            <div class="card">
+                <div class="card-front">
+                    <div class="card-bg"></div>
+                    <div class="effects-container"></div>
+                    <div class="card-content">
+                        <div>
+                            <h1 class="city-name"></h1>
+                            <p class="landmark-name"></p>
+                        </div>
+                        <div>
+                            <div class="weather-info">
+                                <div class="weather-icon"></div>
+                                <div class="weather-details">
+                                    <div class="temperature"></div>
+                                    <div class="condition"></div>
+                                </div>
+                            </div>
+                            <p class="description"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 城市数据
+        const cityData = {
+            // 中国城市
+            wuhan: {
+                name: "武汉",
+                landmark: "黄鹤楼",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%23243B55\"/><rect x=\"150\" y=\"150\" width=\"100\" height=\"300\" fill=\"%23f5d742\"/><rect x=\"140\" y=\"120\" width=\"120\" height=\"30\" fill=\"%23f5d742\"/><rect x=\"130\" y=\"90\" width=\"140\" height=\"30\" fill=\"%23f5d742\"/><rect x=\"120\" y=\"60\" width=\"160\" height=\"30\" fill=\"%23f5d742\"/><path d=\"M200,50 L250,60 L240,90 L160,90 L150,60 Z\" fill=\"%23d4af37\"/><rect x=\"170\" y=\"450\" width=\"60\" height=\"150\" fill=\"%23654321\"/></svg>')",
+                weather: {
+                    icon: "🌸",
+                    temp: "24°C",
+                    condition: "晴朗"
+                },
+                description: "武汉，湖北省的省会，是中国中部地区的重要城市。这里有著名的黄鹤楼、东湖和樱花胜景，春天是观赏樱花的最佳时节。",
+                effect: "sakura"
+            },
+            beijing: {
+                name: "北京",
+                landmark: "故宫",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%23B22222\"/><rect x=\"100\" y=\"200\" width=\"200\" height=\"200\" fill=\"%23CD5C5C\"/><rect x=\"125\" y=\"250\" width=\"150\" height=\"150\" fill=\"%23B22222\"/><rect x=\"150\" y=\"300\" width=\"100\" height=\"100\" fill=\"%23CD5C5C\"/><rect x=\"90\" y=\"180\" width=\"220\" height=\"20\" fill=\"%23FFD700\"/><rect x=\"90\" y=\"400\" width=\"220\" height=\"20\" fill=\"%23FFD700\"/><rect x=\"80\" y=\"170\" width=\"240\" height=\"10\" fill=\"%23FFD700\"/><rect x=\"80\" y=\"420\" width=\"240\" height=\"10\" fill=\"%23FFD700\"/></svg>')",
+                weather: {
+                    icon: "🍂",
+                    temp: "18°C",
+                    condition: "多云"
+                },
+                description: "北京，中国的首都，拥有丰富的历史文化遗产。这里有故宫、长城、天坛等世界闻名的景点，展现了中国古代建筑的壮丽和精湛。",
+                effect: "leaf"
+            },
+            shanghai: {
+                name: "上海",
+                landmark: "东方明珠",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%23483D8B\"/><path d=\"M200,100 L200,500 L200,100 Z\" stroke=\"%23FF69B4\" stroke-width=\"4\"/><circle cx=\"200\" cy=\"150\" r=\"30\" fill=\"%23FF69B4\"/><circle cx=\"200\" cy=\"250\" r=\"50\" fill=\"%23FF69B4\"/><circle cx=\"200\" cy=\"400\" r=\"70\" fill=\"%23FF69B4\"/><rect x=\"100\" y=\"470\" width=\"200\" height=\"130\" fill=\"%234682B4\"/><rect x=\"130\" y=\"500\" width=\"30\" height=\"40\" fill=\"%23FFD700\"/><rect x=\"180\" y=\"500\" width=\"30\" height=\"40\" fill=\"%23FFD700\"/><rect x=\"230\" y=\"500\" width=\"30\" height=\"40\" fill=\"%23FFD700\"/></svg>')",
+                weather: {
+                    icon: "☁️",
+                    temp: "22°C",
+                    condition: "阴天"
+                },
+                description: "上海，中国最大的经济中心城市，融合了东西方文化。这里有外滩、东方明珠、上海环球金融中心等现代地标，也有丰富的历史街区。",
+                effect: "cloud"
+            },
+            guangzhou: {
+                name: "广州",
+                landmark: "广州塔",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%2348D1CC\"/><path d=\"M190,100 L210,100 L230,500 L170,500 Z\" fill=\"%23FF69B4\"/><ellipse cx=\"200\" cy=\"120\" rx=\"30\" ry=\"20\" fill=\"%23FF69B4\"/><rect x=\"170\" y=\"500\" width=\"60\" height=\"100\" fill=\"%23DAA520\"/><rect x=\"120\" y=\"400\" width=\"160\" height=\"30\" fill=\"%23FF69B4\"/><rect x=\"100\" y=\"430\" width=\"200\" height=\"70\" fill=\"%23708090\"/></svg>')",
+                weather: {
+                    icon: "🌦️",
+                    temp: "28°C",
+                    condition: "多云转晴"
+                },
+                description: "广州，广东省省会，是南方最重要的经济中心和交通枢纽。这里拥有广州塔、沙面、陈家祠等景点，粤菜和茶文化闻名遐迩。",
+                effect: "cloud"
+            },
+            chengdu: {
+                name: "成都",
+                landmark: "都江堰",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%236B8E23\"/><circle cx=\"200\" cy=\"150\" r=\"70\" fill=\"%23FFD700\"/><path d=\"M50,350 C100,250 300,250 350,350 L350,600 L50,600 Z\" fill=\"%233CB371\"/><circle cx=\"150\" cy=\"450\" r=\"30\" fill=\"black\"/><circle cx=\"150\" cy=\"450\" r=\"25\" fill=\"white\"/><ellipse cx=\"150\" cy=\"450\" rx=\"15\" ry=\"20\" fill=\"black\"/><circle cx=\"250\" cy=\"450\" r=\"30\" fill=\"black\"/><circle cx=\"250\" cy=\"450\" r=\"25\" fill=\"white\"/><ellipse cx=\"250\" cy=\"450\" rx=\"15\" ry=\"20\" fill=\"black\"/></svg>')",
+                weather: {
+                    icon: "🌧️",
+                    temp: "22°C",
+                    condition: "小雨"
+                },
+                description: "成都，四川省省会，以大熊猫、川菜和休闲生活方式闻名。这里有都江堰、青城山、武侯祠等著名景点，是中国最宜居的城市之一。",
+                effect: "raindrop"
+            },
+            hangzhou: {
+                name: "杭州",
+                landmark: "西湖",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%2387CEEB\"/><path d=\"M0,300 C100,250 300,250 400,300 L400,600 L0,600 Z\" fill=\"%2300CED1\"/><path d=\"M50,350 L100,280 L150,350 L200,280 L250,350 L300,280 L350,350 L380,320 L380,600 L20,600 Z\" fill=\"%23556B2F\"/><path d=\"M180,400 C200,380 280,380 300,400 L300,600 L180,600 Z\" fill=\"%23A52A2A\"/></svg>')",
+                weather: {
+                    icon: "☁️",
+                    temp: "24°C",
+                    condition: "多云"
+                },
+                description: "杭州，浙江省省会，以西湖美景闻名于世。这里有西湖、灵隐寺、龙井茶园等著名景点，自古就有上有天堂，下有苏杭的美誉。",
+                effect: "flower"
+            },
+            xian: {
+                name: "西安",
+                landmark: "兵马俑",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%23D2B48C\"/><rect x=\"50\" y=\"200\" width=\"300\" height=\"200\" fill=\"%23A0522D\"/><rect x=\"70\" y=\"250\" width=\"50\" height=\"100\" fill=\"%23D2B48C\"/><rect x=\"170\" y=\"250\" width=\"50\" height=\"100\" fill=\"%23D2B48C\"/><rect x=\"270\" y=\"250\" width=\"50\" height=\"100\" fill=\"%23D2B48C\"/><rect x=\"50\" y=\"180\" width=\"300\" height=\"20\" fill=\"%23CD853F\"/><rect x=\"40\" y=\"160\" width=\"320\" height=\"20\" fill=\"%23CD853F\"/><rect x=\"25\" y=\"400\" width=\"350\" height=\"200\" fill=\"%238B4513\"/></svg>')",
+                weather: {
+                    icon: "☀️",
+                    temp: "20°C",
+                    condition: "晴朗"
+                },
+                description: "西安，陕西省省会，是中国历史上最重要的古都之一。这里有秦始皇兵马俑、大雁塔、古城墙等历史遗迹，是中华文明的重要发祥地。",
+                effect: "sand"
+            },
+            lhasa: {
+                name: "拉萨",
+                landmark: "布达拉宫",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%234682B4\"/><rect x=\"100\" y=\"200\" width=\"200\" height=\"150\" fill=\"%23F5F5F5\"/><rect x=\"80\" y=\"350\" width=\"240\" height=\"100\" fill=\"%23CD5C5C\"/><rect x=\"50\" y=\"450\" width=\"300\" height=\"150\" fill=\"%23800000\"/><path d=\"M150,200 L250,200 L200,150 Z\" fill=\"%23FFD700\"/><rect x=\"120\" y=\"250\" width=\"30\" height=\"50\" fill=\"%23800000\"/><rect x=\"170\" y=\"250\" width=\"30\" height=\"50\" fill=\"%23800000\"/><rect x=\"220\" y=\"250\" width=\"30\" height=\"50\" fill=\"%23800000\"/><circle cx=\"80\" cy=\"80\" r=\"30\" fill=\"%23FFD700\"/></svg>')",
+                weather: {
+                    icon: "☀️",
+                    temp: "12°C",
+                    condition: "晴朗"
+                },
+                description: "拉萨，西藏自治区首府，平均海拔3650米，是世界上海拔最高的城市之一。这里有布达拉宫、大昭寺等藏传佛教圣地，风景壮丽。",
+                effect: "cloud"
+            },
+            harbin: {
+                name: "哈尔滨",
+                landmark: "冰雪大世界",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%23B0E0E6\"/><rect x=\"50\" y=\"200\" width=\"300\" height=\"200\" fill=\"%23F0F8FF\"/><path d=\"M100,200 L150,150 L250,150 L300,200 Z\" fill=\"%23F0F8FF\"/><rect x=\"130\" y=\"250\" width=\"50\" height=\"80\" fill=\"%2387CEFA\"/><rect x=\"220\" y=\"250\" width=\"50\" height=\"80\" fill=\"%2387CEFA\"/><path d=\"M0,400 L400,400 L400,600 L0,600 Z\" fill=\"%23F0F8FF\"/><path d=\"M100,200 L100,400 L300,400 L300,200 Z\" fill=\"%23F0F8FF\"/></svg>')",
+                weather: {
+                    icon: "❄️",
+                    temp: "-10°C",
+                    condition: "下雪"
+                },
+                description: "哈尔滨，黑龙江省省会，以冰雪文化闻名于世。每年举办的哈尔滨国际冰雪节吸引了世界各地的游客，圣索菲亚教堂是城市的标志。",
+                effect: "snowflake"
+            },
+            xiamen: {
+                name: "厦门",
+                landmark: "鼓浪屿",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%2387CEEB\"/><path d=\"M0,300 C50,280 100,300 150,280 C200,260 250,280 300,260 C350,240 400,260 400,280 L400,600 L0,600 Z\" fill=\"%2300CED1\"/><path d=\"M200,450 C150,450 150,400 100,400 C50,400 50,450 0,450 L0,600 L400,600 L400,450 C350,450 350,400 300,400 C250,400 250,450 200,450 Z\" fill=\"%23F5DEB3\"/><rect x=\"150\" y=\"150\" width=\"100\" height=\"150\" fill=\"%23FFE4C4\"/><rect x=\"170\" y=\"180\" width=\"20\" height=\"30\" fill=\"%23A52A2A\"/><rect x=\"210\" y=\"180\" width=\"20\" height=\"30\" fill=\"%23A52A2A\"/><rect x=\"170\" y=\"250\" width=\"60\" height=\"50\" fill=\"%23A52A2A\"/></svg>')",
+                weather: {
+                    icon: "🌤️",
+                    temp: "26°C",
+                    condition: "晴间多云"
+                },
+                description: "厦门，福建省沿海城市，拥有美丽的海滩和迷人的鼓浪屿。这里气候宜人，环境优美，是中国最受欢迎的旅游目的地之一。",
+                effect: "cloud"
+            },
+            guilin: {
+                name: "桂林",
+                landmark: "漓江山水",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%23B0E0E6\"/><path d=\"M50,200 L100,100 L150,200 L50,200 Z\" fill=\"%23228B22\"/><path d=\"M150,250 L200,150 L250,250 L150,250 Z\" fill=\"%23228B22\"/><path d=\"M250,200 L300,100 L350,200 L250,200 Z\" fill=\"%23228B22\"/><path d=\"M0,400 C50,350 100,380 150,350 C200,320 250,350 300,320 C350,290 400,320 400,350 L400,600 L0,600 Z\" fill=\"%2300CED1\"/></svg>')",
+                weather: {
+                    icon: "🌧️",
+                    temp: "23°C",
+                    condition: "小雨"
+                },
+                description: "桂林，广西壮族自治区著名旅游城市，因山水甲天下而闻名。漓江山水、阳朔西街、龙脊梯田是这里最著名的景点。",
+                effect: "raindrop"
+            },
+            suzhou: {
+                name: "苏州",
+                landmark: "拙政园",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%23E0FFFF\"/><path d=\"M50,150 L80,120 L120,150 L150,120 L180,150 L210,120 L240,150 L270,120 L310,150 L340,120 L370,150 L370,300 L50,300 Z\" fill=\"%23C0C0C0\"/><path d=\"M100,300 L300,300 L300,350 L100,350 Z\" fill=\"%23A52A2A\"/><path d=\"M0,400 C100,350 300,350 400,400 L400,600 L0,600 Z\" fill=\"%2300CED1\"/><rect x=\"150\" y=\"200\" width=\"15\" height=\"50\" fill=\"%23556B2F\"/><ellipse cx=\"157\" cy=\"180\" rx=\"30\" ry=\"20\" fill=\"%23228B22\"/><rect x=\"250\" y=\"220\" width=\"15\" height=\"50\" fill=\"%23556B2F\"/><ellipse cx=\"257\" cy=\"200\" rx=\"25\" ry=\"15\" fill=\"%23228B22\"/></svg>')",
+                weather: {
+                    icon: "☁️",
+                    temp: "23°C",
+                    condition: "多云"
+                },
+                description: "苏州，江苏省历史文化名城，以园林、水乡古镇和丝绸文化闻名。拙政园、虎丘、周庄等景点展现了江南水乡的独特魅力。",
+                effect: "cloud"
+            },
+
+            // 亚洲城市
+            tokyo: {
+                name: "东京",
+                landmark: "东京塔",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%234169E1\"/><path d=\"M200,100 L170,400 L230,400 Z\" fill=\"%23FF4500\"/><path d=\"M185,100 L215,100 L210,150 L190,150 Z\" fill=\"%23FF4500\"/><rect x=\"195\" y=\"80\" width=\"10\" height=\"20\" fill=\"%23FF4500\"/><rect x=\"160\" y=\"400\" width=\"80\" height=\"50\" fill=\"%23FF4500\"/><rect x=\"100\" y=\"450\" width=\"200\" height=\"100\" fill=\"%23708090\"/><rect x=\"120\" y=\"470\" width=\"20\" height=\"30\" fill=\"%23F0F8FF\"/><rect x=\"160\" y=\"470\" width=\"20\" height=\"30\" fill=\"%23F0F8FF\"/><rect x=\"200\" y=\"470\" width=\"20\" height=\"30\" fill=\"%23F0F8FF\"/><rect x=\"240\" y=\"470\" width=\"20\" height=\"30\" fill=\"%23F0F8FF\"/><rect x=\"120\" y=\"510\" width=\"20\" height=\"30\" fill=\"%23F0F8FF\"/><rect x=\"160\" y=\"510\" width=\"20\" height=\"30\" fill=\"%23F0F8FF\"/><rect x=\"200\" y=\"510\" width=\"20\" height=\"30\" fill=\"%23F0F8FF\"/><rect x=\"240\" y=\"510\" width=\"20\" height=\"30\" fill=\"%23F0F8FF\"/></svg>')",
+                weather: {
+                    icon: "🌸",
+                    temp: "20°C",
+                    condition: "晴朗"
+                },
+                description: "东京，日本的首都，是一座融合传统和现代的大都市。这里有东京塔、浅草寺、新宿等著名景点，樱花季节尤为美丽。",
+                effect: "sakura"
+            },
+            osaka: {
+                name: "大阪",
+                landmark: "大阪城",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%235F9EA0\"/><rect x=\"125\" y=\"200\" width=\"150\" height=\"150\" fill=\"%23F5F5F5\"/><rect x=\"100\" y=\"350\" width=\"200\" height=\"100\" fill=\"%23F5F5F5\"/><path d=\"M125,200 L275,200 L200,150 Z\" fill=\"%23008000\"/><rect x=\"150\" y=\"250\" width=\"30\" height=\"50\" fill=\"%23000080\"/><rect x=\"220\" y=\"250\" width=\"30\" height=\"50\" fill=\"%23000080\"/><rect x=\"150\" y=\"350\" width=\"30\" height=\"50\" fill=\"%23000080\"/><rect x=\"220\" y=\"350\" width=\"30\" height=\"50\" fill=\"%23000080\"/><path d=\"M0,450 L400,450 L400,600 L0,600 Z\" fill=\"%23696969\"/></svg>')",
+                weather: {
+                    icon: "☁️",
+                    temp: "21°C",
+                    condition: "多云"
+                },
+                description: "大阪，日本第二大城市，以美食和热情的市民而闻名。大阪城、道顿堀、环球影城是这里最受欢迎的景点，关西风味的美食不容错过。",
+                effect: "cloud"
+            },
+            kyoto: {
+                name: "京都",
+                landmark: "金阁寺",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%238FBC8F\"/><rect x=\"150\" y=\"200\" width=\"100\" height=\"100\" fill=\"%23FFD700\"/><rect x=\"150\" y=\"300\" width=\"100\" height=\"100\" fill=\"%23B8860B\"/><path d=\"M150,200 L250,200 L200,150 Z\" fill=\"%23FFD700\"/><path d=\"M0,400 L400,400 L400,600 L0,600 Z\" fill=\"%2300CED1\"/><rect x=\"170\" y=\"250\" width=\"20\" height=\"30\" fill=\"%23000000\"/><rect x=\"210\" y=\"250\" width=\"20\" height=\"30\" fill=\"%23000000\"/></svg>')",
+                weather: {
+                    icon: "🌸",
+                    temp: "19°C",
+                    condition: "晴朗"
+                },
+                description: "京都，日本古都，保存了大量的历史建筑和传统文化。金阁寺、清水寺、伏见稻荷大社等寺庙以及美丽的枫叶和樱花景观吸引了无数游客。",
+                effect: "sakura"
+            },
+            seoul: {
+                name: "首尔",
+                landmark: "景福宫",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%238A2BE2\"/><rect x=\"100\" y=\"200\" width=\"200\" height=\"150\" fill=\"%23CD5C5C\"/><path d=\"M100,200 L300,200 L200,150 Z\" fill=\"%23800000\"/><path d=\"M100,350 L300,350 L300,400 L100,400 Z\" fill=\"%23800000\"/><rect x=\"150\" y=\"250\" width=\"30\" height=\"60\" fill=\"%23000000\"/><rect x=\"220\" y=\"250\" width=\"30\" height=\"60\" fill=\"%23000000\"/><path d=\"M0,400 L400,400 L400,600 L0,600 Z\" fill=\"%23696969\"/></svg>')",
+                weather: {
+                    icon: "🌧️",
+                    temp: "18°C",
+                    condition: "小雨"
+                },
+                description: "首尔，韩国首都，是一座现代化的大都市，同时保存了丰富的历史文化。景福宫、南山塔、明洞购物街和韩国传统美食是这里的亮点。",
+                effect: "raindrop"
+            },
+            bangkok: {
+                name: "曼谷",
+                landmark: "大皇宫",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%23FF8C00\"/><rect x=\"150\" y=\"200\" width=\"100\" height=\"200\" fill=\"%23FFD700\"/><path d=\"M150,200 L250,200 L200,150 Z\" fill=\"%23FFD700\"/><path d=\"M130,400 L270,400 L270,450 L130,450 Z\" fill=\"%23800000\"/><rect x=\"170\" y=\"250\" width=\"20\" height=\"40\" fill=\"%23800000\"/><rect x=\"210\" y=\"250\" width=\"20\" height=\"40\" fill=\"%23800000\"/><path d=\"M0,450 L400,450 L400,600 L0,600 Z\" fill=\"%23006400\"/></svg>')",
+                weather: {
+                    icon: "☀️",
+                    temp: "32°C",
+                    condition: "晴热"
+                },
+                description: "曼谷，泰国首都，以其辉煌的寺庙、繁忙的街道和美味的食物而闻名。大皇宫、卧佛寺、考山路和水上市场是旅游必去之地。",
+                effect: "tropical-bird"
+            },
+            singapore: {
+                name: "新加坡",
+                landmark: "鱼尾狮公园",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%231E90FF\"/><rect x=\"50\" y=\"300\" width=\"100\" height=\"200\" fill=\"%23B0C4DE\"/><rect x=\"170\" y=\"200\" width=\"80\" height=\"300\" fill=\"%23B0C4DE\"/><rect x=\"270\" y=\"250\" width=\"80\" height=\"250\" fill=\"%23B0C4DE\"/><rect x=\"60\" y=\"320\" width=\"20\" height=\"30\" fill=\"%23000080\"/><rect x=\"90\" y=\"320\" width=\"20\" height=\"30\" fill=\"%23000080\"/><rect x=\"60\" y=\"370\" width=\"20\" height=\"30\" fill=\"%23000080\"/><rect x=\"90\" y=\"370\" width=\"20\" height=\"30\" fill=\"%23000080\"/><rect x=\"180\" y=\"220\" width=\"20\" height=\"30\" fill=\"%23000080\"/><rect x=\"220\" y=\"220\" width=\"20\" height=\"30\" fill=\"%23000080\"/><path d=\"M0,500 L400,500 L400,600 L0,600 Z\" fill=\"%23008080\"/></svg>')",
+                weather: {
+                    icon: "⛅",
+                    temp: "30°C",
+                    condition: "多云"
+                },
+                description: "新加坡，东南亚的城市国家，以其清洁、安全和现代化而闻名。滨海湾花园、圣淘沙岛、牛车水以及融合多元文化的美食是这里的亮点。",
+                effect: "cloud"
+            },
+            bali: {
+                name: "巴厘岛",
+                landmark: "海神庙",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%2387CEEB\"/><path d=\"M0,350 C50,320 150,380 200,320 C250,260 350,320 400,290 L400,600 L0,600 Z\" fill=\"%2300CED1\"/><rect x=\"180\" y=\"200\" width=\"40\" height=\"80\" fill=\"%23A52A2A\"/><path d=\"M170,200 L230,200 L200,170 Z\" fill=\"%23A52A2A\"/><path d=\"M160,280 L240,280 L240,320 L160,320 Z\" fill=\"%23A52A2A\"/><path d=\"M0,450 L400,450 L400,600 L0,600 Z\" fill=\"%23F5DEB3\"/><circle cx=\"100\" cy=\"150\" r=\"30\" fill=\"%23FFD700\"/></svg>')",
+                weather: {
+                    icon: "☀️",
+                    temp: "29°C",
+                    condition: "晴朗"
+                },
+                description: "巴厘岛，印度尼西亚最著名的旅游胜地，以其美丽的海滩、独特的文化和热带风情而闻名。乌布、库塔海滩和各种水上活动是游客的最爱。",
+                effect: "tropical-bird"
+            },
+            dubai: {
+                name: "迪拜",
+                landmark: "帆船酒店",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%23FFD700\"/><rect x=\"180\" y=\"100\" width=\"40\" height=\"300\" fill=\"%23F5F5F5\"/><path d=\"M100,400 L300,400 L300,600 L100,600 Z\" fill=\"%2300CED1\"/><path d=\"M180,100 L220,100 L220,150 C200,200 180,150 180,100 Z\" fill=\"%23F5F5F5\"/><rect x=\"120\" y=\"200\" width=\"30\" height=\"200\" fill=\"%23F5F5F5\"/><rect x=\"250\" y=\"150\" width=\"30\" height=\"250\" fill=\"%23F5F5F5\"/><path d=\"M0,400 L400,400 L400,600 L0,600 Z\" fill=\"%23F5DEB3\"/></svg>')",
+                weather: {
+                    icon: "☀️",
+                    temp: "36°C",
+                    condition: "晴热"
+                },
+                description: "迪拜，阿联酋最大的城市，以其豪华的购物中心、高耸的摩天大楼和奢华的生活方式而闻名。哈利法塔、棕榈岛和沙漠冒险是这里的亮点。",
+                effect: "sand"
+            },
+
+            // 欧洲城市
+            paris: {
+                name: "巴黎",
+                landmark: "埃菲尔铁塔",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%23778899\"/><path d=\"M200,100 L150,450 L250,450 Z\" fill=\"%23696969\"/><path d=\"M180,100 L170,200 L230,200 L220,100 Z\" fill=\"%23696969\"/><path d=\"M175,200 L165,300 L235,300 L225,200 Z\" fill=\"%23696969\"/><path d=\"M160,300 L150,450 L250,450 L240,300 Z\" fill=\"%23696969\"/><rect x=\"130\" y=\"450\" width=\"140\" height=\"20\" fill=\"%23696969\"/></svg>')",
+                weather: {
+                    icon: "🌧️",
+                    temp: "15°C",
+                    condition: "小雨"
+                },
+                description: "巴黎，法国的首都，被誉为光之城。这里有埃菲尔铁塔、卢浮宫、凯旋门等闻名世界的地标，是艺术与浪漫的代名词。",
+                effect: "raindrop"
+            },
+            london: {
+                name: "伦敦",
+                landmark: "伦敦眼",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%23708090\"/><rect x=\"150\" y=\"250\" width=\"100\" height=\"200\" fill=\"%23B22222\"/><rect x=\"180\" y=\"300\" width=\"40\" height=\"50\" fill=\"%23000000\"/><circle cx=\"300\" cy=\"200\" r=\"70\" fill=\"none\" stroke=\"%23F5F5F5\" stroke-width=\"10\"/><rect x=\"295\" y=\"130\" width=\"10\" height=\"140\" fill=\"%23F5F5F5\"/><rect x=\"230\" y=\"195\" width=\"140\" height=\"10\" fill=\"%23F5F5F5\"/><path d=\"M0,450 L400,450 L400,600 L0,600 Z\" fill=\"%23483D8B\"/><path d=\"M100,450 C150,350 250,350 300,450 Z\" fill=\"%23483D8B\"/></svg>')",
+                weather: {
+                    icon: "☁️",
+                    temp: "12°C",
+                    condition: "阴天"
+                },
+                description: "伦敦，英国首都，是一座历史与现代完美融合的城市。这里有大本钟、伦敦塔桥、白金汉宫等著名景点，英式下午茶文化独具特色。",
+                effect: "cloud"
+            },
+            rome: {
+                name: "罗马",
+                landmark: "罗马斗兽场",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%23FFA07A\"/><ellipse cx=\"200\" cy=\"300\" rx=\"100\" ry=\"70\" fill=\"none\" stroke=\"%23A0522D\" stroke-width=\"20\"/><ellipse cx=\"200\" cy=\"300\" rx=\"70\" ry=\"40\" fill=\"none\" stroke=\"%23A0522D\" stroke-width=\"10\"/><path d=\"M120,300 L280,300\" stroke=\"%23A0522D\" stroke-width=\"10\"/><path d=\"M200,230 L200,370\" stroke=\"%23A0522D\" stroke-width=\"10\"/><rect x=\"80\" y=\"100\" width=\"40\" height=\"100\" fill=\"%23A0522D\"/><rect x=\"70\" y=\"80\" width=\"60\" height=\"20\" fill=\"%23A0522D\"/></svg>')",
+                weather: {
+                    icon: "☀️",
+                    temp: "22°C",
+                    condition: "晴朗"
+                },
+                description: "罗马，意大利首都，被称为永恒之城。斗兽场、万神殿、许愿池等古迹见证了辉煌的古罗马文明，意式美食和艺术作品令人流连忘返。",
+                effect: "cloud"
+            },
+            barcelona: {
+                name: "巴塞罗那",
+                landmark: "圣家族大教堂",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%23FF8C00\"/><path d=\"M150,150 L250,150 L230,100 L170,100 Z\" fill=\"%23FFD700\"/><path d=\"M100,150 L300,150 L300,350 L100,350 Z\" fill=\"%23FFD700\"/><path d=\"M150,150 L150,80 L170,100 L190,80 L210,100 L230,80 L250,150 Z\" fill=\"%23FFD700\"/><rect x=\"130\" y=\"200\" width=\"40\" height=\"80\" fill=\"%23800000\"/><rect x=\"230\" y=\"200\" width=\"40\" height=\"80\" fill=\"%23800000\"/><path d=\"M0,350 L400,350 L400,600 L0,600 Z\" fill=\"%2300CED1\"/></svg>')",
+                weather: {
+                    icon: "☀️",
+                    temp: "24°C",
+                    condition: "晴朗"
+                },
+                description: "巴塞罗那，西班牙著名的旅游城市，以高迪的建筑作品而闻名于世。圣家族大教堂、奎尔公园、兰布拉大道和地中海海滩是城市的标志。",
+                effect: "cloud"
+            },
+            venice: {
+                name: "威尼斯",
+                landmark: "圣马可广场",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%2387CEEB\"/><rect x=\"0\" y=\"300\" width=\"400\" height=\"300\" fill=\"%2300CED1\"/><path d=\"M50,300 L100,200 L150,300 Z\" fill=\"%23CD5C5C\"/><path d=\"M150,300 L200,220 L250,300 Z\" fill=\"%23CD5C5C\"/><path d=\"M250,300 L300,180 L350,300 Z\" fill=\"%23CD5C5C\"/><rect x=\"70\" y=\"250\" width=\"20\" height=\"50\" fill=\"%23A0522D\"/><rect x=\"175\" y=\"260\" width=\"20\" height=\"40\" fill=\"%23A0522D\"/><rect x=\"270\" y=\"240\" width=\"20\" height=\"60\" fill=\"%23A0522D\"/><path d=\"M100,350 C100,320 150,320 150,350\" fill=\"none\" stroke=\"%23A0522D\" stroke-width=\"10\"/><path d=\"M200,320 C200,290 250,290 250,320\" fill=\"none\" stroke=\"%23A0522D\" stroke-width=\"10\"/></svg>')",
+                weather: {
+                    icon: "☁️",
+                    temp: "18°C",
+                    condition: "多云"
+                },
+                description: "威尼斯，意大利的水城，由117个小岛和150多条运河组成的独特城市。乘坐贡多拉游览大运河、参观圣马可广场和叹息桥是必不可少的体验。",
+                effect: "cloud"
+            },
+            santorini: {
+                name: "圣托里尼",
+                landmark: "蓝顶教堂",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%231E90FF\"/><path d=\"M0,200 L400,200 L400,600 L0,600 Z\" fill=\"%23F5F5F5\"/><rect x=\"50\" y=\"200\" width=\"80\" height=\"100\" fill=\"%23F5F5F5\"/><rect x=\"150\" y=\"200\" width=\"100\" height=\"150\" fill=\"%23F5F5F5\"/><rect x=\"270\" y=\"200\" width=\"80\" height=\"120\" fill=\"%23F5F5F5\"/><path d=\"M180,200 L220,200 L200,180 Z\" fill=\"%230000CD\"/><ellipse cx=\"200\" cy=\"210\" rx=\"20\" ry=\"10\" fill=\"%230000CD\"/><rect x=\"70\" y=\"230\" width=\"20\" height=\"30\" fill=\"%230000CD\"/><rect x=\"180\" y=\"250\" width=\"20\" height=\"30\" fill=\"%230000CD\"/><rect x=\"290\" y=\"240\" width=\"20\" height=\"30\" fill=\"%230000CD\"/></svg>')",
+                weather: {
+                    icon: "☀️",
+                    temp: "25°C",
+                    condition: "晴朗"
+                },
+                description: "圣托里尼，希腊最受欢迎的爱琴海岛屿，以其白色的房屋、蓝色的圆顶教堂和壮观的悬崖景观而闻名。费拉、伊亚和火山黑沙滩是热门景点。",
+                effect: "cloud"
+            },
+            prague: {
+                name: "布拉格",
+                landmark: "查理大桥",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%23483D8B\"/><rect x=\"100\" y=\"150\" width=\"200\" height=\"150\" fill=\"%23CD853F\"/><path d=\"M100,150 L300,150 L200,100 Z\" fill=\"%238B4513\"/><rect x=\"130\" y=\"200\" width=\"40\" height=\"100\" fill=\"%238B0000\"/><rect x=\"230\" y=\"200\" width=\"40\" height=\"100\" fill=\"%238B0000\"/><path d=\"M0,400 L400,400 L400,600 L0,600 Z\" fill=\"%234682B4\"/><path d=\"M50,400 L100,350 L150,400\" fill=\"none\" stroke=\"%23A0522D\" stroke-width=\"10\"/><path d=\"M150,400 L200,350 L250,400\" fill=\"none\" stroke=\"%23A0522D\" stroke-width=\"10\"/><path d=\"M250,400 L300,350 L350,400\" fill=\"none\" stroke=\"%23A0522D\" stroke-width=\"10\"/></svg>')",
+                weather: {
+                    icon: "☁️",
+                    temp: "14°C",
+                    condition: "多云"
+                },
+                description: "布拉格，捷克共和国首都，被誉为百塔之城。布拉格城堡、查理大桥、老城广场和天文钟是这座童话般城市的标志性景点。",
+                effect: "cloud"
+            },
+            vienna: {
+                name: "维也纳",
+                landmark: "美泉宫",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%239370DB\"/><rect x=\"100\" y=\"200\" width=\"200\" height=\"150\" fill=\"%23F5DEB3\"/><path d=\"M100,200 L300,200 L200,150 Z\" fill=\"%23DAA520\"/><rect x=\"130\" y=\"250\" width=\"30\" height=\"50\" fill=\"%23800000\"/><rect x=\"190\" y=\"250\" width=\"30\" height=\"50\" fill=\"%23800000\"/><rect x=\"250\" y=\"250\" width=\"30\" height=\"50\" fill=\"%23800000\"/><path d=\"M50,350 L350,350 L350,400 L50,400 Z\" fill=\"%23DAA520\"/><path d=\"M0,400 L400,400 L400,600 L0,600 Z\" fill=\"%236B8E23\"/></svg>')",
+                weather: {
+                    icon: "☁️",
+                    temp: "15°C",
+                    condition: "多云"
+                },
+                description: "维也纳，奥地利首都，以其辉煌的音乐历史和巴洛克建筑而闻名。美泉宫、霍夫堡宫、维也纳国家歌剧院和莫扎特的故居吸引了众多游客。",
+                effect: "cloud"
+            },
+            amsterdam: {
+                name: "阿姆斯特丹",
+                landmark: "风车村",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%236495ED\"/><rect x=\"100\" y=\"250\" width=\"60\" height=\"150\" fill=\"%238B4513\"/><rect x=\"240\" y=\"250\" width=\"60\" height=\"150\" fill=\"%238B4513\"/><path d=\"M90,250 L170,250 L130,200 Z\" fill=\"%23CD853F\"/><path d=\"M230,250 L310,250 L270,200 Z\" fill=\"%23CD853F\"/><rect x=\"180\" y=\"150\" width=\"20\" height=\"250\" fill=\"%23A0522D\"/><path d=\"M170,150 L180,150 L180,170 L200,170 L200,150 L210,150 L210,200 L170,200 Z\" fill=\"%23D2B48C\"/><path d=\"M0,400 L400,400 L400,600 L0,600 Z\" fill=\"%2300CED1\"/><path d=\"M50,400 C50,380 100,380 100,400\" fill=\"none\" stroke=\"%23006400\" stroke-width=\"5\"/><path d=\"M120,400 C120,380 170,380 170,400\" fill=\"none\" stroke=\"%23006400\" stroke-width=\"5\"/><path d=\"M190,400 C190,380 240,380 240,400\" fill=\"none\" stroke=\"%23006400\" stroke-width=\"5\"/><path d=\"M260,400 C260,380 310,380 310,400\" fill=\"none\" stroke=\"%23006400\" stroke-width=\"5\"/><path d=\"M330,400 C330,380 380,380 380,400\" fill=\"none\" stroke=\"%23006400\" stroke-width=\"5\"/></svg>')",
+                weather: {
+                    icon: "🌧️",
+                    temp: "12°C",
+                    condition: "小雨"
+                },
+                description: "阿姆斯特丹，荷兰首都，以其运河网络、自行车文化和历史建筑而闻名。梵高博物馆、安妮弗兰克故居、风车村和郁金香花园是这里的亮点。",
+                effect: "raindrop"
+            },
+            istanbul: {
+                name: "伊斯坦布尔",
+                landmark: "蓝色清真寺",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%23D2691E\"/><rect x=\"150\" y=\"200\" width=\"100\" height=\"150\" fill=\"%23F5F5F5\"/><path d=\"M150,200 L250,200 L200,150 Z\" fill=\"%23F5F5F5\"/><circle cx=\"200\" cy=\"170\" r=\"10\" fill=\"%23FFD700\"/><rect x=\"170\" y=\"300\" width=\"20\" height=\"50\" fill=\"%234169E1\"/><rect x=\"210\" y=\"300\" width=\"20\" height=\"50\" fill=\"%234169E1\"/><path d=\"M0,350 L400,350 L400,600 L0,600 Z\" fill=\"%2300CED1\"/><path d=\"M100,350 C100,320 150,300 200,320 C250,340 300,320 300,350\" fill=\"none\" stroke=\"%23F5F5F5\" stroke-width=\"5\"/></svg>')",
+                weather: {
+                    icon: "☀️",
+                    temp: "23°C",
+                    condition: "晴朗"
+                },
+                description: "伊斯坦布尔，土耳其最大城市，横跨欧亚两大洲。蓝色清真寺、圣索菲亚大教堂、托普卡帕宫和大巴扎是这座历史悠久城市的标志性景点。",
+                effect: "cloud"
+            },
+            stockholm: {
+                name: "斯德哥尔摩",
+                landmark: "瓦萨沉船博物馆",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%235F9EA0\"/><rect x=\"100\" y=\"200\" width=\"80\" height=\"150\" fill=\"%23CD5C5C\"/><rect x=\"220\" y=\"220\" width=\"80\" height=\"130\" fill=\"%23CD5C5C\"/><rect x=\"120\" y=\"250\" width=\"20\" height=\"40\" fill=\"%23F5F5F5\"/><rect x=\"150\" y=\"250\" width=\"20\" height=\"40\" fill=\"%23F5F5F5\"/><rect x=\"240\" y=\"270\" width=\"20\" height=\"40\" fill=\"%23F5F5F5\"/><rect x=\"270\" y=\"270\" width=\"20\" height=\"40\" fill=\"%23F5F5F5\"/><path d=\"M150,350 C150,330 160,320 180,330 C200,340 220,330 220,350\" fill=\"none\" stroke=\"%23A0522D\" stroke-width=\"10\"/><path d=\"M0,400 L400,400 L400,600 L0,600 Z\" fill=\"%2300008B\"/></svg>')",
+                weather: {
+                    icon: "❄️",
+                    temp: "5°C",
+                    condition: "下雪"
+                },
+                description: "斯德哥尔摩，瑞典首都，建在14个岛屿之上，被称为北方威尼斯。市政厅、瓦萨沉船博物馆、皇宫和老城区是这座美丽城市的代表。",
+                effect: "snowflake"
+            },
+
+            // 美洲城市
+            newyork: {
+                name: "纽约",
+                landmark: "自由女神像",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%232F4F4F\"/><rect x=\"80\" y=\"150\" width=\"40\" height=\"400\" fill=\"%23708090\"/><rect x=\"130\" y=\"200\" width=\"40\" height=\"350\" fill=\"%23708090\"/><rect x=\"180\" y=\"100\" width=\"40\" height=\"450\" fill=\"%23708090\"/><rect x=\"230\" y=\"170\" width=\"40\" height=\"380\" fill=\"%23708090\"/><rect x=\"280\" y=\"220\" width=\"40\" height=\"330\" fill=\"%23708090\"/><path d=\"M200,80 L210,120 L230,120 L215,140 L225,180 L200,155 L175,180 L185,140 L170,120 L190,120 Z\" fill=\"%23FFD700\"/></svg>')",
+                weather: {
+                    icon: "❄️",
+                    temp: "5°C",
+                    condition: "下雪"
+                },
+                description: "纽约，美国最大的城市，世界金融中心。这里有自由女神像、帝国大厦、中央公园等著名景点，展现了美国的多元文化和城市活力。",
+                effect: "snowflake"
+            },
+            sanfrancisco: {
+                name: "旧金山",
+                landmark: "金门大桥",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%234682B4\"/><path d=\"M0,300 L400,300\" stroke=\"%23FF4500\" stroke-width=\"20\"/><path d=\"M100,300 L100,250\" stroke=\"%23FF4500\" stroke-width=\"5\"/><path d=\"M300,300 L300,250\" stroke=\"%23FF4500\" stroke-width=\"5\"/><path d=\"M50,300 C50,100 350,100 350,300\" fill=\"none\" stroke=\"%23FF4500\" stroke-width=\"5\"/><path d=\"M0,350 C100,320 300,320 400,350 L400,600 L0,600 Z\" fill=\"%2300CED1\"/><path d=\"M50,400 L100,300 L150,350 L200,300 L250,350 L300,300 L350,400\" fill=\"none\" stroke=\"%23006400\" stroke-width=\"15\"/></svg>')",
+                weather: {
+                    icon: "☁️",
+                    temp: "18°C",
+                    condition: "多云"
+                },
+                description: "旧金山，美国加州的标志性城市，以其陡峭的山丘、维多利亚式建筑和金门大桥而闻名。渔人码头、恶魔岛和缆车是热门旅游景点。",
+                effect: "cloud"
+            },
+            lasvegas: {
+                name: "拉斯维加斯",
+                landmark: "赌场酒店",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%23000000\"/><rect x=\"50\" y=\"150\" width=\"60\" height=\"300\" fill=\"%23FFD700\"/><rect x=\"130\" y=\"100\" width=\"60\" height=\"350\" fill=\"%23FF69B4\"/><rect x=\"210\" y=\"200\" width=\"60\" height=\"250\" fill=\"%2300FFFF\"/><rect x=\"290\" y=\"150\" width=\"60\" height=\"300\" fill=\"%2300FF00\"/><circle cx=\"80\" cy=\"200\" r=\"10\" fill=\"%23FFFFFF\"/><circle cx=\"80\" cy=\"250\" r=\"10\" fill=\"%23FFFFFF\"/><circle cx=\"80\" cy=\"300\" r=\"10\" fill=\"%23FFFFFF\"/><circle cx=\"160\" cy=\"150\" r=\"10\" fill=\"%23FFFFFF\"/><circle cx=\"160\" cy=\"200\" r=\"10\" fill=\"%23FFFFFF\"/><circle cx=\"160\" cy=\"250\" r=\"10\" fill=\"%23FFFFFF\"/><circle cx=\"240\" cy=\"250\" r=\"10\" fill=\"%23FFFFFF\"/><circle cx=\"240\" cy=\"300\" r=\"10\" fill=\"%23FFFFFF\"/><circle cx=\"240\" cy=\"350\" r=\"10\" fill=\"%23FFFFFF\"/><circle cx=\"320\" cy=\"200\" r=\"10\" fill=\"%23FFFFFF\"/><circle cx=\"320\" cy=\"250\" r=\"10\" fill=\"%23FFFFFF\"/><circle cx=\"320\" cy=\"300\" r=\"10\" fill=\"%23FFFFFF\"/></svg>')",
+                weather: {
+                    icon: "☀️",
+                    temp: "30°C",
+                    condition: "晴热"
+                },
+                description: "拉斯维加斯，美国内华达州的沙漠中城市，以其豪华的赌场、酒店和娱乐表演而闻名。拉斯维加斯大道、百乐宫和大峡谷是热门景点。",
+                effect: "sand"
+            },
+            losangeles: {
+                name: "洛杉矶",
+                landmark: "好莱坞标志",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%23FF8C00\"/><path d=\"M50,200 L350,200 L350,220 L50,220 Z\" fill=\"%23FFFFFF\"/><path d=\"M70,220 L100,220 L100,250 L70,250 Z\" fill=\"%23FFFFFF\"/><path d=\"M120,220 L150,220 L150,250 L120,250 Z\" fill=\"%23FFFFFF\"/><path d=\"M170,220 L200,220 L200,250 L170,250 Z\" fill=\"%23FFFFFF\"/><path d=\"M220,220 L250,220 L250,250 L220,250 Z\" fill=\"%23FFFFFF\"/><path d=\"M270,220 L300,220 L300,250 L270,250 Z\" fill=\"%23FFFFFF\"/><path d=\"M320,220 L350,220 L350,250 L320,250 Z\" fill=\"%23FFFFFF\"/><circle cx=\"200\" cy=\"100\" r=\"30\" fill=\"%23FFD700\"/><path d=\"M0,300 L400,300 L400,600 L0,600 Z\" fill=\"%2300CED1\"/><rect x=\"150\" y=\"350\" width=\"100\" height=\"50\" fill=\"%23A52A2A\"/><rect x=\"180\" y=\"400\" width=\"40\" height=\"50\" fill=\"%23A52A2A\"/></svg>')",
+                weather: {
+                    icon: "☀️",
+                    temp: "25°C",
+                    condition: "晴朗"
+                },
+                description: "洛杉矶，美国加州第一大城市，以好莱坞电影工业和阳光海滩而闻名。环球影城、比佛利山庄、圣莫尼卡海滩和迪士尼乐园是必游之地。",
+                effect: "cloud"
+            },
+            vancouver: {
+                name: "温哥华",
+                landmark: "卡皮拉诺吊桥",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%236B8E23\"/><rect x=\"100\" y=\"200\" width=\"50\" height=\"200\" fill=\"%23A9A9A9\"/><rect x=\"170\" y=\"150\" width=\"60\" height=\"250\" fill=\"%23A9A9A9\"/><rect x=\"250\" y=\"180\" width=\"50\" height=\"220\" fill=\"%23A9A9A9\"/><rect x=\"120\" y=\"250\" width=\"20\" height=\"30\" fill=\"%23F0F8FF\"/><rect x=\"120\" y=\"300\" width=\"20\" height=\"30\" fill=\"%23F0F8FF\"/><rect x=\"190\" y=\"200\" width=\"20\" height=\"30\" fill=\"%23F0F8FF\"/><rect x=\"190\" y=\"250\" width=\"20\" height=\"30\" fill=\"%23F0F8FF\"/><rect x=\"190\" y=\"300\" width=\"20\" height=\"30\" fill=\"%23F0F8FF\"/><rect x=\"265\" y=\"230\" width=\"20\" height=\"30\" fill=\"%23F0F8FF\"/><rect x=\"265\" y=\"280\" width=\"20\" height=\"30\" fill=\"%23F0F8FF\"/><path d=\"M50,200 L350,200\" fill=\"none\" stroke=\"%23A0522D\" stroke-width=\"5\"/><path d=\"M60,200 L60,190\" fill=\"none\" stroke=\"%23A0522D\" stroke-width=\"2\"/><path d=\"M100,200 L100,190\" fill=\"none\" stroke=\"%23A0522D\" stroke-width=\"2\"/><path d=\"M140,200 L140,190\" fill=\"none\" stroke=\"%23A0522D\" stroke-width=\"2\"/><path d=\"M180,200 L180,190\" fill=\"none\" stroke=\"%23A0522D\" stroke-width=\"2\"/><path d=\"M220,200 L220,190\" fill=\"none\" stroke=\"%23A0522D\" stroke-width=\"2\"/><path d=\"M260,200 L260,190\" fill=\"none\" stroke=\"%23A0522D\" stroke-width=\"2\"/><path d=\"M300,200 L300,190\" fill=\"none\" stroke=\"%23A0522D\" stroke-width=\"2\"/><path d=\"M340,200 L340,190\" fill=\"none\" stroke=\"%23A0522D\" stroke-width=\"2\"/></svg>')",
+                weather: {
+                    icon: "🌧️",
+                    temp: "12°C",
+                    condition: "小雨"
+                },
+                description: "温哥华，加拿大的西海岸港口城市，被誉为世界最宜居城市之一。史丹利公园、格兰维尔岛和附近的惠斯勒滑雪胜地是热门景点。",
+                effect: "raindrop"
+            },
+            riodejaneiro: {
+                name: "里约热内卢",
+                landmark: "基督像",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%23FF8C00\"/><path d=\"M0,200 C50,150 150,180 200,150 C250,120 350,150 400,120 L400,600 L0,600 Z\" fill=\"%2300CED1\"/><path d=\"M150,300 C150,250 250,250 250,300\" fill=\"none\" stroke=\"%23F5DEB3\" stroke-width=\"10\"/><path d=\"M200,150 L200,300\" fill=\"none\" stroke=\"%23F5DEB3\" stroke-width=\"10\"/><path d=\"M150,200 L250,200\" fill=\"none\" stroke=\"%23F5DEB3\" stroke-width=\"10\"/><circle cx=\"80\" cy=\"100\" r=\"30\" fill=\"%23FFD700\"/></svg>')",
+                weather: {
+                    icon: "☀️",
+                    temp: "28°C",
+                    condition: "晴朗"
+                },
+                description: "里约热内卢，巴西著名的海滨城市，以壮观的基督救世主像和科帕卡巴纳海滩而闻名。每年的狂欢节吸引着来自世界各地的游客。",
+                effect: "tropical-bird"
+            },
+            havana: {
+                name: "哈瓦那",
+                landmark: "老城区",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%23FF4500\"/><rect x=\"50\" y=\"200\" width=\"70\" height=\"200\" fill=\"%23CD5C5C\"/><rect x=\"150\" y=\"250\" width=\"70\" height=\"150\" fill=\"%23F5DEB3\"/><rect x=\"250\" y=\"200\" width=\"70\" height=\"200\" fill=\"%2387CEEB\"/><rect x=\"70\" y=\"250\" width=\"20\" height=\"30\" fill=\"%23000000\"/><rect x=\"70\" y=\"300\" width=\"20\" height=\"30\" fill=\"%23000000\"/><rect x=\"170\" y=\"280\" width=\"20\" height=\"30\" fill=\"%23000000\"/><rect x=\"170\" y=\"330\" width=\"20\" height=\"30\" fill=\"%23000000\"/><rect x=\"270\" y=\"250\" width=\"20\" height=\"30\" fill=\"%23000000\"/><rect x=\"270\" y=\"300\" width=\"20\" height=\"30\" fill=\"%23000000\"/><path d=\"M0,400 L400,400 L400,600 L0,600 Z\" fill=\"%2300CED1\"/><rect x=\"50\" y=\"400\" width=\"300\" height=\"20\" fill=\"%23A0522D\"/></svg>')",
+                weather: {
+                    icon: "☀️",
+                    temp: "29°C",
+                    condition: "晴朗"
+                },
+                description: "哈瓦那，古巴首都，以其殖民时期的建筑、老爷车和丰富的音乐文化而闻名。老城区、革命广场和马勒孔海滨大道是游客必游之地。",
+                effect: "tropical-bird"
+            },
+            cancun: {
+                name: "坎昆",
+                landmark: "玛雅遗址",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%231E90FF\"/><path d=\"M0,300 L400,300 L400,600 L0,600 Z\" fill=\"%2300CED1\"/><path d=\"M0,300 L400,300 L400,330 L0,330 Z\" fill=\"%23F5DEB3\"/><rect x=\"150\" y=\"150\" width=\"100\" height=\"100\" fill=\"%23808080\"/><path d=\"M150,150 L250,150 L200,100 Z\" fill=\"%23808080\"/><rect x=\"180\" y=\"200\" width=\"40\" height=\"50\" fill=\"%23000000\"/><circle cx=\"80\" cy=\"80\" r=\"30\" fill=\"%23FFD700\"/><path d=\"M300,330 C300,300 350,300 350,330\" fill=\"none\" stroke=\"%23006400\" stroke-width=\"5\"/><path d=\"M250,330 C250,300 290,300 290,330\" fill=\"none\" stroke=\"%23006400\" stroke-width=\"5\"/></svg>')",
+                weather: {
+                    icon: "☀️",
+                    temp: "30°C",
+                    condition: "晴朗"
+                },
+                description: "坎昆，墨西哥著名的海滨度假胜地，以其洁白的沙滩、蓝色的海水和玛雅文明遗址而闻名。奇琴伊察金字塔、地下河和珊瑚礁是这里的自然奇观。",
+                effect: "tropical-bird"
+            },
+
+            // 大洋洲与非洲城市
+            sydney: {
+                name: "悉尼",
+                landmark: "悉尼歌剧院",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%2300BFFF\"/><path d=\"M150,300 C150,200 250,200 250,300 L250,350 L150,350 Z\" fill=\"%23F5F5F5\"/><path d=\"M170,300 C170,220 230,220 230,300 L230,350 L170,350 Z\" fill=\"%23F5F5F5\"/><rect x=\"100\" y=\"350\" width=\"200\" height=\"50\" fill=\"%23A9A9A9\"/><path d=\"M50,400 L350,400 L320,450 L80,450 Z\" fill=\"%23A9A9A9\"/><rect x=\"0\" y=\"450\" width=\"400\" height=\"150\" fill=\"%2300BFFF\"/></svg>')",
+                weather: {
+                    icon: "☀️",
+                    temp: "28°C",
+                    condition: "晴朗"
+                },
+                description: "悉尼，澳大利亚最大的城市，以其壮观的海港和悉尼歌剧院而闻名。这里有邦迪海滩、悉尼塔等著名景点，阳光明媚的气候非常宜人。",
+                effect: "cloud"
+            },
+            melbourne: {
+                name: "墨尔本",
+                landmark: "联邦广场",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%234682B4\"/><rect x=\"120\" y=\"200\" width=\"60\" height=\"250\" fill=\"%23A9A9A9\"/><rect x=\"200\" y=\"150\" width=\"80\" height=\"300\" fill=\"%23D3D3D3\"/><rect x=\"130\" y=\"250\" width=\"20\" height=\"30\" fill=\"%23000000\"/><rect x=\"130\" y=\"300\" width=\"20\" height=\"30\" fill=\"%23000000\"/><rect x=\"130\" y=\"350\" width=\"20\" height=\"30\" fill=\"%23000000\"/><rect x=\"220\" y=\"200\" width=\"20\" height=\"30\" fill=\"%23000000\"/><rect x=\"220\" y=\"250\" width=\"20\" height=\"30\" fill=\"%23000000\"/><rect x=\"220\" y=\"300\" width=\"20\" height=\"30\" fill=\"%23000000\"/><rect x=\"220\" y=\"350\" width=\"20\" height=\"30\" fill=\"%23000000\"/><rect x=\"250\" y=\"200\" width=\"20\" height=\"30\" fill=\"%23000000\"/><rect x=\"250\" y=\"250\" width=\"20\" height=\"30\" fill=\"%23000000\"/><rect x=\"250\" y=\"300\" width=\"20\" height=\"30\" fill=\"%23000000\"/><rect x=\"250\" y=\"350\" width=\"20\" height=\"30\" fill=\"%23000000\"/><path d=\"M0,450 L400,450 L400,600 L0,600 Z\" fill=\"%2300CED1\"/></svg>')",
+                weather: {
+                    icon: "🌧️",
+                    temp: "22°C",
+                    condition: "小雨"
+                },
+                description: "墨尔本，澳大利亚的文化之都，以其咖啡文化、艺术氛围和花园城市的设计而闻名。联邦广场、墨尔本板球场和大洋路是这里的著名景点。",
+                effect: "raindrop"
+            },
+            queenstown: {
+                name: "皇后镇",
+                landmark: "瓦卡蒂普湖",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%234682B4\"/><path d=\"M0,200 L100,50 L200,150 L300,100 L400,200 L400,600 L0,600 Z\" fill=\"%23006400\"/><path d=\"M0,300 L400,300 L400,600 L0,600 Z\" fill=\"%2300CED1\"/><rect x=\"150\" y=\"350\" width=\"100\" height=\"100\" fill=\"%23A0522D\"/><path d=\"M150,350 L250,350 L200,300 Z\" fill=\"%23A0522D\"/><rect x=\"180\" y=\"400\" width=\"40\" height=\"50\" fill=\"%23000000\"/></svg>')",
+                weather: {
+                    icon: "☀️",
+                    temp: "15°C",
+                    condition: "晴朗"
+                },
+                description: "皇后镇，新西兰南岛的度假胜地，被誉为冒险之都。这里有壮观的雪山、瓦卡蒂普湖和各种极限运动项目，如蹦极、滑雪和喷射快艇。",
+                effect: "cloud"
+            },
+            cairo: {
+                name: "开罗",
+                landmark: "金字塔",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%23FFA500\"/><path d=\"M100,400 L200,200 L300,400 Z\" fill=\"%23D2B48C\"/><path d=\"M150,400 L250,250 L350,400 Z\" fill=\"%23D2B48C\"/><path d=\"M50,400 L150,250 L250,400 Z\" fill=\"%23D2B48C\"/><circle cx=\"350\" cy=\"100\" r=\"30\" fill=\"%23FFD700\"/><path d=\"M0,400 L400,400 L400,600 L0,600 Z\" fill=\"%23F5DEB3\"/></svg>')",
+                weather: {
+                    icon: "☀️",
+                    temp: "30°C",
+                    condition: "晴热"
+                },
+                description: "开罗，埃及首都，是通往古埃及文明的门户。吉萨金字塔、狮身人面像、埃及博物馆和尼罗河游船是体验这座古老城市的最佳方式。",
+                effect: "sand"
+            },
+            capetown: {
+                name: "开普敦",
+                landmark: "桌山",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%231E90FF\"/><path d=\"M50,300 L350,300 L350,200 L50,200 Z\" fill=\"%23006400\"/><path d=\"M0,300 L400,300 L400,600 L0,600 Z\" fill=\"%2300CED1\"/><rect x=\"150\" y=\"350\" width=\"30\" height=\"100\" fill=\"%23A0522D\"/><rect x=\"220\" y=\"350\" width=\"30\" height=\"100\" fill=\"%23A0522D\"/><circle cx=\"165\" cy=\"320\" r=\"15\" fill=\"%23228B22\"/><circle cx=\"235\" cy=\"320\" r=\"15\" fill=\"%23228B22\"/><circle cx=\"80\" cy=\"100\" r=\"30\" fill=\"%23FFD700\"/></svg>')",
+                weather: {
+                    icon: "☀️",
+                    temp: "25°C",
+                    condition: "晴朗"
+                },
+                description: "开普敦，南非最美丽的城市之一，以其壮观的桌山和优美的海岸线而闻名。好望角、罗本岛和开普敦海滨长廊是这里的著名景点。",
+                effect: "cloud"
+            },
+            marrakech: {
+                name: "马拉喀什",
+                landmark: "库图比亚清真寺",
+                bg: "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"600\" viewBox=\"0 0 400 600\"><rect width=\"400\" height=\"600\" fill=\"%23CD5C5C\"/><rect x=\"150\" y=\"150\" width=\"100\" height=\"250\" fill=\"%23B22222\"/><rect x=\"180\" y=\"100\" width=\"40\" height=\"50\" fill=\"%23B22222\"/><rect x=\"195\" y=\"80\" width=\"10\" height=\"20\" fill=\"%23B22222\"/><rect x=\"170\" y=\"200\" width=\"20\" height=\"40\" fill=\"%23000000\"/><rect x=\"210\" y=\"200\" width=\"20\" height=\"40\" fill=\"%23000000\"/><rect x=\"170\" y=\"270\" width=\"20\" height=\"40\" fill=\"%23000000\"/><rect x=\"210\" y=\"270\" width=\"20\" height=\"40\" fill=\"%23000000\"/><path d=\"M0,400 L400,400 L400,600 L0,600 Z\" fill=\"%23F5DEB3\"/></svg>')",
+                weather: {
+                    icon: "☀️",
+                    temp: "28°C",
+                    condition: "晴热"
+                },
+                description: "马拉喀什，摩洛哥古都，以其红色建筑和热闹的市集而闻名。杰马·埃尔·夫纳广场、马约尔花园和库图比亚清真寺展现了城市的独特魅力。",
+                effect: "sand"
+            }
+        };
+
+        // 生成天气特效
+        function createEffect(type, container) {
+            container.innerHTML = '';
+
+            let count = 0;
+            let sizes = [];
+            let durations = [];
+            let delays = [];
+
+            switch (type) {
+                case 'sakura':
+                    count = 30;
+                    for (let i = 0; i < count; i++) {
+                        const sakura = document.createElement('div');
+                        sakura.classList.add('sakura');
+
+                        const size = Math.random() * 8 + 5;
+                        const posX = Math.random() * 100;
+                        const duration = Math.random() * 10 + 8;
+                        const delay = Math.random() * 10;
+                        const driftDuration = Math.random() * 3 + 2;
+
+                        sakura.style.width = size + 'px';
+                        sakura.style.height = size + 'px';
+                        sakura.style.left = posX + '%';
+                        sakura.style.animationDuration = `${duration}s, ${driftDuration}s`;
+                        sakura.style.animationDelay = `${delay}s, ${delay}s`;
+
+                        container.appendChild(sakura);
+                    }
+                    break;
+
+                case 'snowflake':
+                    count = 50;
+                    for (let i = 0; i < count; i++) {
+                        const snowflake = document.createElement('div');
+                        snowflake.classList.add('snowflake');
+
+                        const size = Math.random() * 5 + 2;
+                        const posX = Math.random() * 100;
+                        const duration = Math.random() * 10 + 10;
+                        const delay = Math.random() * 10;
+                        const driftDuration = Math.random() * 3 + 2;
+
+                        snowflake.style.width = size + 'px';
+                        snowflake.style.height = size + 'px';
+                        snowflake.style.left = posX + '%';
+                        snowflake.style.animationDuration = `${duration}s, ${driftDuration}s`;
+                        snowflake.style.animationDelay = `${delay}s, ${delay}s`;
+
+                        container.appendChild(snowflake);
+                    }
+                    break;
+
+                case 'raindrop':
+                    count = 80;
+                    for (let i = 0; i < count; i++) {
+                        const raindrop = document.createElement('div');
+                        raindrop.classList.add('raindrop');
+
+                        const size = Math.random() * 2 + 1;
+                        const posX = Math.random() * 100;
+                        const duration = Math.random() * 1.5 + 1;
+                        const delay = Math.random() * 5;
+
+                        raindrop.style.width = size + 'px';
+                        raindrop.style.height = size * 7 + 'px';
+                        raindrop.style.left = posX + '%';
+                        raindrop.style.animationDuration = duration + 's';
+                        raindrop.style.animationDelay = delay + 's';
+
+                        container.appendChild(raindrop);
+                    }
+                    break;
+
+                case 'cloud':
+                    count = 5;
+                    for (let i = 0; i < count; i++) {
+                        const cloud = document.createElement('div');
+                        cloud.classList.add('cloud');
+
+                        const size = Math.random() * 30 + 20;
+                        const posY = Math.random() * 50 + 10;
+                        const duration = Math.random() * 40 + 30;
+                        const delay = Math.random() * 15;
+
+                        cloud.style.width = size + 'px';
+                        cloud.style.height = size + 'px';
+                        cloud.style.top = posY + '%';
+                        cloud.style.opacity = Math.random() * 0.4 + 0.3;
+                        cloud.style.animationDuration = duration + 's';
+                        cloud.style.animationDelay = delay + 's';
+
+                        container.appendChild(cloud);
+                    }
+                    break;
+
+                case 'leaf':
+                    count = 20;
+                    for (let i = 0; i < count; i++) {
+                        const leaf = document.createElement('div');
+                        leaf.classList.add('leaf');
+
+                        const size = Math.random() * 10 + 8;
+                        const posX = Math.random() * 100;
+                        const duration = Math.random() * 10 + 8;
+                        const delay = Math.random() * 10;
+                        const driftDuration = Math.random() * 4 + 3;
+
+                        leaf.style.width = size + 'px';
+                        leaf.style.height = size + 'px';
+                        leaf.style.left = posX + '%';
+                        leaf.style.animationDuration = `${duration}s, ${driftDuration}s`;
+                        leaf.style.animationDelay = `${delay}s, ${delay}s`;
+
+                        if (Math.random() > 0.5) {
+                            leaf.style.background = 'rgba(205, 133, 63, 0.7)';
+                        }
+
+                        container.appendChild(leaf);
+                    }
+                    break;
+
+                case 'sand':
+                    count = 40;
+                    for (let i = 0; i < count; i++) {
+                        const sand = document.createElement('div');
+                        sand.classList.add('sand');
+
+                        const size = Math.random() * 4 + 1;
+                        const posY = Math.random() * 100;
+                        const posX = Math.random() * 100;
+                        const duration = Math.random() * 3 + 2;
+                        const delay = Math.random() * 5;
+
+                        sand.style.width = size + 'px';
+                        sand.style.height = size + 'px';
+                        sand.style.top = posY + '%';
+                        sand.style.left = posX + '%';
+                        sand.style.animationDuration = duration + 's';
+                        sand.style.animationDelay = delay + 's';
+
+                        container.appendChild(sand);
+                    }
+                    break;
+
+                case 'aurora':
+                    count = 3;
+                    for (let i = 0; i < count; i++) {
+                        const aurora = document.createElement('div');
+                        aurora.classList.add('aurora');
+
+                        const posY = Math.random() * 20 + (i * 20);
+                        const duration = Math.random() * 5 + 5;
+                        const delay = Math.random() * 2;
+
+                        aurora.style.top = posY + '%';
+                        aurora.style.animationDuration = duration + 's';
+                        aurora.style.animationDelay = delay + 's';
+
+                        if (i === 0) {
+                            aurora.style.background = 'linear-gradient(0deg, rgba(0, 255, 0, 0), rgba(0, 255, 100, 0.3), rgba(100, 200, 255, 0.2), rgba(0, 0, 255, 0.1))';
+                        } else if (i === 1) {
+                            aurora.style.background = 'linear-gradient(0deg, rgba(0, 200, 255, 0), rgba(0, 150, 255, 0.3), rgba(100, 100, 255, 0.2), rgba(200, 0, 255, 0.1))';
+                        } else {
+                            aurora.style.background = 'linear-gradient(0deg, rgba(0, 255, 200, 0), rgba(0, 255, 150, 0.2), rgba(150, 255, 100, 0.1), rgba(255, 255, 0, 0.05))';
+                        }
+
+                        container.appendChild(aurora);
+                    }
+                    break;
+
+                case 'tropical-bird':
+                    count = 5;
+                    for (let i = 0; i < count; i++) {
+                        const bird = document.createElement('div');
+                        bird.classList.add('tropical-bird');
+
+                        const size = Math.random() * 5 + 10;
+                        const posY = Math.random() * 30 + 10;
+                        const duration = Math.random() * 10 + 15;
+                        const delay = Math.random() * 10;
+
+                        bird.style.width = size + 'px';
+                        bird.style.height = size / 2 + 'px';
+                        bird.style.top = posY + '%';
+                        bird.style.animationDuration = duration + 's';
+                        bird.style.animationDelay = delay + 's';
+
+                        // Random colors for birds
+                        const colors = ['rgba(255, 0, 0, 0.8)', 'rgba(0, 200, 255, 0.8)', 'rgba(255, 200, 0, 0.8)', 'rgba(0, 255, 100, 0.8)'];
+                        const color = colors[Math.floor(Math.random() * colors.length)];
+                        bird.style.background = color;
+
+                        // Set pseudo-elements color
+                        const style = document.createElement('style');
+                        style.textContent = `
+                            .tropical-bird:nth-child(${i + 1})::before,
+                            .tropical-bird:nth-child(${i + 1})::after {
+                                background: ${color};
+                            }
+                        `;
+                        document.head.appendChild(style);
+
+                        container.appendChild(bird);
+                    }
+                    break;
+
+                case 'flower':
+                    count = 25;
+                    for (let i = 0; i < count; i++) {
+                        const flower = document.createElement('div');
+                        flower.classList.add('flower');
+
+                        const size = Math.random() * 4 + 3;
+                        const posX = Math.random() * 100;
+                        const duration = Math.random() * 10 + 8;
+                        const delay = Math.random() * 10;
+                        const driftDuration = Math.random() * 3 + 2;
+
+                        flower.style.width = size + 'px';
+                        flower.style.height = size + 'px';
+                        flower.style.left = posX + '%';
+                        flower.style.animationDuration = `${duration}s, ${driftDuration}s`;
+                        flower.style.animationDelay = `${delay}s, ${delay}s`;
+
+                        // Different colors for flowers
+                        const colors = ['rgba(255, 192, 203, 0.7)', 'rgba(255, 255, 255, 0.7)', 'rgba(255, 222, 173, 0.7)'];
+                        flower.style.background = colors[Math.floor(Math.random() * colors.length)];
+
+                        container.appendChild(flower);
+                    }
+                    break;
+            }
+        }
+
+        // 更新城市卡片
+        function updateCity(city) {
+            const data = cityData[city];
+            document.querySelector('.city-name').textContent = data.name;
+            document.querySelector('.landmark-name').textContent = data.landmark;
+            document.querySelector('.card-bg').style.background = data.bg;
+            document.querySelector('.weather-icon').textContent = data.weather.icon;
+            document.querySelector('.temperature').textContent = data.weather.temp;
+            document.querySelector('.condition').textContent = data.weather.condition;
+            document.querySelector('.description').textContent = data.description;
+
+            createEffect(data.effect, document.querySelector('.effects-container'));
+        }
+
+        // 搜索城市
+        function searchCity(query) {
+            query = query.toLowerCase().trim();
+            if (!query) return;
+
+            for (const [key, city] of Object.entries(cityData)) {
+                if (city.name.toLowerCase().includes(query)) {
+                    updateCityUI(key);
+                    return;
+                }
+            }
+
+            // 如果没有找到匹配的城市
+            alert('没有找到匹配的城市，请尝试其他城市名称');
+        }
+
+        // 更新UI上的城市选择状态
+        function updateCityUI(cityKey) {
+            const cityButtons = document.querySelectorAll('.city-btn');
+            cityButtons.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.city === cityKey) {
+                    btn.classList.add('active');
+                    // 滚动到视图
+                    btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+
+            updateCity(cityKey);
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            updateCity('wuhan');
+
+            const cityButtons = document.querySelectorAll('.city-btn');
+            cityButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    cityButtons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    updateCity(this.dataset.city);
+                });
+            });
+
+            // 添加3D效果互动
+            const card = document.querySelector('.card');
+            document.querySelector('.card-container').addEventListener('mousemove', (e) => {
+                const xAxis = (window.innerWidth / 2 - e.pageX) / 15;
+                const yAxis = (window.innerHeight / 2 - e.pageY) / 15;
+                card.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
+            });
+
+            document.querySelector('.card-container').addEventListener('mouseenter', () => {
+                card.style.transition = 'none';
+            });
+
+            document.querySelector('.card-container').addEventListener('mouseleave', () => {
+                card.style.transition = 'transform 0.5s ease';
+                card.style.transform = 'rotateY(0deg) rotateX(0deg)';
+            });
+
+            // 搜索功能
+            const searchInput = document.getElementById('citySearch');
+            searchInput.addEventListener('keyup', function (e) {
+                if (e.key === 'Enter') {
+                    searchCity(this.value);
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
