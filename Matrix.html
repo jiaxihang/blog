@@ -49,7 +49,8 @@
 
         #root {
             position: relative;
-            z-index: 1;
+            z-index: 2;
+            /* 提高z-index确保内容显示在画布上方 */
         }
 
         .container {
@@ -488,6 +489,14 @@
             }
         }
 
+        /* 移动端菜单按钮样式 */
+        .mobile-menu-btn {
+            display: none;
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: var(--matrix-green);
+        }
+
         /* 媒体查询，支持响应式布局 */
         @media screen and (max-width: 768px) {
             .timeline::after {
@@ -533,9 +542,6 @@
 
             .mobile-menu-btn {
                 display: block;
-                cursor: pointer;
-                font-size: 1.5rem;
-                color: var(--matrix-green);
             }
 
             .logo {
@@ -990,13 +996,13 @@
                 // 创建分层树状布局
                 const root = d3.hierarchy(skillData);
                 const treeLayout = d3.tree()
-                    .size([width - 100, height - 100]);
+                    .size([height - 100, width - 200]);  // 注意：交换了宽度和高度
 
                 treeLayout(root);
 
                 // 创建节点与连线的容器
                 const g = svg.append('g')
-                    .attr('transform', `translate(50, 50)`);
+                    .attr('transform', `translate(150, 50)`);
 
                 // 创建连线
                 g.selectAll('.link')
@@ -1565,6 +1571,7 @@
             );
         };
 
+        // 立即渲染应用
         ReactDOM.render(<App />, document.getElementById('root'));
     </script>
 </body>
