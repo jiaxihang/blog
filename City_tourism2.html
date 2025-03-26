@@ -31,6 +31,10 @@
             flex-direction: column;
             align-items: center;
             padding: 20px;
+            min-height: 100vh;
+            /* 确保容器占满视口高度 */
+            justify-content: space-between;
+            /* 分隔搜索框、城市选择和卡片 */
         }
 
         .city-selector {
@@ -40,6 +44,34 @@
             gap: 10px;
             margin-bottom: 30px;
             width: 100%;
+            max-height: 300px;
+            /* 设置固定高度，可根据需要调整 */
+            overflow-y: auto;
+            /* 启用垂直滚动 */
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            /* 可选：增加背景区分 */
+            border-radius: 10px;
+            /* 可选：美化边角 */
+        }
+
+        /* 美化滚动条（可选） */
+        .city-selector::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .city-selector::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .city-selector::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+        }
+
+        .city-selector::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
         }
 
         .city-btn {
@@ -76,6 +108,8 @@
             width: 100%;
             max-width: 400px;
             height: 600px;
+            flex-shrink: 0;
+            /* 防止卡片被压缩 */
         }
 
         .card {
